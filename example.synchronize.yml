@@ -1,7 +1,0 @@
----
-my_yaml_test:
-  sections: 
-  - ssh: 'thor' # pane at the top
-  - ssh: 'northstar' # pane at the bottom 
-  focus: '0.0' # focus
-  synchronize: true # synchronize panes

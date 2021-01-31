@@ -6,7 +6,7 @@ class Ultimux:
         
     tmux_cmds = []
 
-    config = {}
+    session_config = {}
     
     session_name = ''
 
@@ -18,7 +18,9 @@ class Ultimux:
 
     synchronize = False
 
-    def __init__(self, config, session_name = ''):
+    validated_destinations = []
+
+    def __init__(self, session_config, session_name = ''):
 
         #########################################
         # Check if tmux is installed
@@ -29,11 +31,11 @@ class Ultimux:
             print ('Tmux is not installed...')   
         
         #########################################
-        # Set config
+        # Set session_config
         #########################################
         datestamp = '{:%Y-%m-%d_%H%M%S}'.format(datetime.datetime.now())
         
-        self.config = config
+        self.session_config = session_config
         
         if not session_name == '':
             self.session_name = session_name + '_' + datestamp
@@ -42,8 +44,7 @@ class Ultimux:
         
         # validate session name
         if re.search('(\.|\:|\ )+',self.session_name):
-            print('Session name may not contain .: or spaces!')
-            sys.exit()
+            self.fail('Session name may not contain .: or spaces!')
         
         #########################################
         # Set defaults
@@ -60,20 +61,22 @@ class Ultimux:
         
         # sycnchronize panes
         self.synchronize = False
+
+    def fail(self, message = ''):
+        print(message)
+        sys.exit(1)
         
     def set_focus(self, focus):
 
         if not re.match('^[0-9]+\.[0-9]+$', focus):
-            print('Focus must be {number}.{number}!')
-            sys.exit()
+            self.fail('Focus must be {number}.{number}!')
 
         self.focus = focus
 
     def set_interactive(self, interactive):
 
         if not type(interactive) == bool:
-            print('Directive interactive must be boolean!')
-            sys.exit()
+            self.fail('Directive interactive must be boolean!')
 
         self.interactive = interactive
 
@@ -84,126 +87,215 @@ class Ultimux:
     def set_synchronize(self, synchronize):
 
         if not type(synchronize) == bool:
-            print('Directive synchronize must be boolean!')
-            sys.exit()
+            self.fail('Directive synchronize must be boolean!')
 
         self.synchronize = synchronize
 
     def create(self):
            
-        config = self.config
-        print('CONFIG')
-        print(config)
+        session_config = self.session_config
+        # ---------------------------------------
+        # Global options
+        # ---------------------------------------
+        if session_config.get('synchronize'):
+            set_synchronize(session_config.get('synchronize'))
         
-        # create a session, the first time you give the name of the first window with -n option
-        self.tmux_cmds.append('tmux new-session -d -A -s ' + self.session_name + ' -n ' + list(self.config.keys())[0])
-        
+        if session_config.get('interactive'):
+            set_interactive(session_config.get('interactive'))
+
+        if session_config.get('focus'):
+            set_focus(session_config.get('focus'))
+       
+        # ---------------------------------------
+        # Create window if required
+        # ---------------------------------------
+        # check if window
+        if not session_config.get('windows'):
+            session_config['windows'] = []
+            session_config['windows'].append({'name':'ultimux'})
+
+        # ---------------------------------------
+        # Iterate windows
+        # ---------------------------------------
         # window counter
         i = 0
+        
+        for window in session_config['windows']:
 
-        for window in config.keys():
-            
+            # ---------------------------------------
+            # Set window name
+            # ---------------------------------------
+            if 'name' in window.keys():
+                window_name = window['name']
+            elif 'ssh' in window.keys():
+                window_name = window['ssh']
+            else:
+                window_name = window['win{}'.format(i)]
+
+            # ---------------------------------------
+            # Create tmux session/window
+            # ---------------------------------------
             # first window is alreay set, skip
             if i > 0:
-                self.tmux_cmds.append('tmux new-window -n ' + window + ' -t ' + self.session_name)
+                self.tmux_cmds.append("tmux new-window -t '{}' -n '{}' ".format(self.session_name, window_name))
+            else:
+                # first loop: create a session + window with -n option
+                self.tmux_cmds.append("tmux new-session -d -A -s {} -n '{}'".format(self.session_name, window_name))
             
             # pane counter
             ii = 0
-            s = 0
 
-            print('++')
-            
-            for section in config[window]['sections']:
+            # ---------------------------------------
+            # Default to global section
+            # ---------------------------------------
+            # global sections
+            if not window.get('sections'):
+                sections = session_config['sections']
+            else:
+                sections = window['sections']
 
-                print('**************')
-                print('SECTION')
-                print(section)
-                print('*******')
-                print(section['cmds'])
+            # ---------------------------------------
+            # Iterate sections
+            # ---------------------------------------
+            for section in sections:
 
                 if ii > 0:
-                    self.tmux_cmds.append('tmux split-window -f -t ' + self.session_name)
+                    self.tmux_cmds.append("tmux split-window -f -t '{}'".format(self.session_name))
             
-                # split window vertically
-                if isinstance(section['cmds'], list):
-
-                    print('+')
-                    print(section['cmds'])
-                    
+                # ---------------------------------------
+                # Split section (row)
+                # ---------------------------------------
+                if section.get('cmds') and isinstance(section['cmds'], list):
+                   
                     # split counter
                     iii = 0
                 
                     for command in section['cmds']: 
                         
                         if iii > 0:
-                            self.tmux_cmds.append('tmux split-window -h -t ' +self.session_name)
+                            self.tmux_cmds.append("tmux split-window -h -t '{}'".format(self.session_name))
                         
                         target = self.session_name + ':' + str(i) + '.' + str(ii)
 
-                        ## TODO: remove duplicate code
-                        if 'ssh' in section.keys():
-                            command = 'ssh {}; {}'.format(section['ssh'], command)
-                        elif 'ssh' in config[window].keys():
-                            command = 'ssh {}; {}'.format(config[window]['ssh'], command)
-                        elif 'ssh' in config.keys():
-                            command = 'ssh {}; {}'.format(config['ssh'], command)
-
-
-                        self.parse_command(command, target)
+                        self.parse_command(command, section, window, target)
                         
                         iii += 1
                         ii += 1
                             
-                # no vertical split
+                # ---------------------------------------
+                # Regular section (row)
+                # ---------------------------------------
                 else:
-                    #print('single')
-                    command = section['cmds']
+                    if section.get('cmds'):
+                        command = section['cmds']
+                    else:
+                        command = ''
+
                     target = self.session_name + ':' + str(i) + '.' + str(ii)
 
-                    print('WINDOW')
-                    print(config[window])
-
-                    ## TODO: remove duplicate code
-                    if 'ssh' in section.keys():
-                        command = 'ssh {}; {}'.format(section['ssh'], command)
-                    elif 'ssh' in config[window].keys():
-                        command = 'ssh {}; {}'.format(config[window]['ssh'], command)
-                    elif 'ssh' in config.keys():
-                        command = 'ssh {}; {}'.format(config['ssh'], command)
-
-                    self.parse_command(command, target)
-                    #print(comm)    
+                    self.parse_command(command, section, window, target)
             
                     ii += 1 # pane
-                s += 1 # section
             i += 1 # window
 
+        # ---------------------------------------
+        # Wrap up
+        # ---------------------------------------
         if self.synchronize:        
-            self.tmux_cmds.append('tmux set-option -t ' +self.session_name + ' synchronize-panes on')
+            self.tmux_cmds.append("tmux set-option -t '{}' synchronize-panes on".format(self.session_name))
 
+        self.tmux_cmds.append("tmux select-pane -t '{}:{}'".format(self.session_name, self.focus))
+        self.tmux_cmds.append("tmux attach -t '{}:{}'".format(self.session_name, self.focus))
+        
+    def parse_command(self, command, section, window, target): 
 
-        self.tmux_cmds.append('tmux select-pane -t ' +self.session_name + ':' + self.focus)
-        self.tmux_cmds.append('tmux attach -t ' +self.session_name + ':' + self.focus)
+        session_config = self.session_config
+        # ---------------------------------------
+        # Get ssh config options
+        # ---------------------------------------
+        ssh_options = {}
+        for directive in ['user', 'server', 'login']:
+
+            ## TODO clean this up
+            # directive in section gets priority
+            if section.get('ssh') and section['ssh'].get(directive):
+                ssh_options[directive] = section['ssh'].get(directive)
+            # directive in window 
+            elif window.get('ssh') and window['ssh'].get(directive):
+                ssh_options[directive] = window['ssh'].get(directive)
+            # directive in session_config
+            elif session_config.get('ssh') and session_config['ssh'].get(directive):
+                ssh_options[directive] = session_config['ssh'].get(directive)
+        # ---------------------------------------
+        # Compile ssh commands
+        # ---------------------------------------
+        if ssh_options:
+
+            if not ssh_options.get('server'):
+                self.fail('Ssh server must be specified!')
+
+            if ssh_options.get('user'):
+                destination = '{}@{}'.format(ssh_options.get('user'), ssh_options.get('server'))
+            else:
+                destination = ssh_options.get('server')
+
+            options = ['-o ConnectTimeout=0']
+            options = []
+
+            # compile ssh command 
+            ssh_command = 'ssh {}{}'.format(' '.join(options), destination)
+            
+
+            # ---------------------------------------
+            # Check connectivity
+            # ---------------------------------------
+            if not destination in self.validated_destinations:
+
+                # first check
+                if not len(self.validated_destinations):
+                    print('Check ssh connectivity...')
+
+                subcommand = '{} {}'.format(ssh_command, 'echo ok') 
+                try:    
+                    # split string into pieces
+                    subprocess.check_output(subcommand.split(), stderr=subprocess.STDOUT)  
+                except subprocess.CalledProcessError as e:
+                    # print(e)
+                    print(destination.ljust(60, '.'), 'FAIL')
+                    self.fail('Failed connectivity check: {}'.format(destination))  
+
+                print(destination.ljust(60, '.'), 'OK')
+                self.validated_destinations.append(destination)
+
+            # ---------------------------------------
+            # Ssh remote or login 
+            # ---------------------------------------
+            # run ssh command remotely or login
+            seperator = ''
+            if ssh_options.get('login'):
+                seperator = ';'
+
+            # add ssh prefix to command 
+            command = '{}{} {}'.format(ssh_command, seperator, command)
+
+        # ---------------------------------------
+        # String of commands
+        # ---------------------------------------
+        tcommands = command.split(';')
         
-    def parse_command(self, command, target): 
-        
-        # check if multiple commands are given
-        commands = command.split(';')
-        #print('commands')
-        #print(commands)
-        
-        for comm in commands:
-            comm = comm.strip(' ')
-            enter = ''
+        for tcommand in tcommands:
+            tcommand = tcommand.strip(' ')
             enter = 'C-m'
 
-            self.tmux_cmds.append("tmux send-keys -t " + target + " '" + comm + "' " + enter)
+            self.tmux_cmds.append("tmux send-keys -t " + target + " '" + tcommand + "' " + enter)
         
     def out(self):
+        print()
+
         for tcomm in self.tmux_cmds:
             print(tcomm)
     
-    def attach(self):
+    def exec(self):
         
         if self.interactive:
             
@@ -214,8 +306,17 @@ class Ultimux:
             answer = input()
 
             if answer != 'Y' and answer != '':
-                sys.exit()
+                self.fail()
 
-        for tcomm in self.tmux_cmds:
-            os.system(tcomm)
-            
+        for subcommand in self.tmux_cmds:
+            os.system(subcommand)
+
+            ## TODO: Does not work with spaces or semi-colons, etc
+            # print(subcommand.split()) 
+            # try:    
+            #     # split the subcommand into a list
+            #     subprocess.check_output(subcommand.split(), stderr=subprocess.STDOUT)  
+            # except subprocess.CalledProcessError as e:
+            #     print(e)
+            #     self.fail('Failed tmux command!')  
+        

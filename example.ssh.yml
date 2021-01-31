@@ -1,0 +1,39 @@
+---
+ssh_yml_full:
+  ssh: 
+    user: 'root'
+    server: 'juggernaut'
+    login: false
+  sections: 
+  - cmds: 'echo 1' # pane at the top
+    ssh: 
+      server: 'iceman'
+      login: true
+  - cmds: ['echo 2', 'echo 3'] # two panes next to eachother
+    ssh: 
+      server: 'cyclops'
+  - cmds: 'echo 4'  
+  windows:
+  - name: 'window 1'
+  - name: 'window 2'
+    ssh: 
+      server: 'northstar'
+      user: brdooms
+      login: true
+    sections:
+    - cmds: 'echo 5'
+    - cmds: 'echo 6'
+  - name: 'window 3'
+    sections:
+    - cmds: 'sudo tail -f /var/log/auth.log'
+ssh_yml_minimal:
+  ssh: 
+    login: true
+  sections: 
+  - ssh: 
+      server: 'iceman'
+  - ssh: 
+      server: 'northstar'
+  synchronize: true # synchronize panes
+  focus: '0.1' # focus
+  interactive: true

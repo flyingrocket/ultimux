@@ -58,67 +58,18 @@ with open(file_path) as file:
     else:
         sys.exit('{} file not supported!'.format(file_path))
 
-print(yaml_config)
-
 if not args.session in yaml_config.keys():
     print('Session not found!')
     sys.exit()
 
 
-if not 'windows' in yaml_config[args.session].keys():
-    yaml_config[args.session]['windows'] = ['default']
-    # sys.exit()
+session_config = yaml_config[args.session]
 
-# -----------------------------------------------
-# Iterate window configs
-# -----------------------------------------------
-config = {}
-# iterate windows from config
-for window_item in yaml_config[args.session]['windows']:
-
-    # -----------------------------------------------
-    # Commands at window level
-    # -----------------------------------------------
-    if type(window_item) == dict:
-        # sections defined on window level
-        window_name = window_item['name']
-
-        config[window_name] = {}
-        # config[window_name] = yaml_config[args.session]['windows']
-        config[window_name]['sections'] = []
-
-        if 'sections' in window_item.keys():
-            for section_config in window_item['sections']:
-                print(section_config)
-                if not 'cmds' in section_config.keys():
-                    print('Section in {} needs a cmds index!'.format(window_name))
-                    sys.exit()
-                else:
-                    config[window_name]['sections'].append(section_config)
-
-        # sections defined at main level
-        elif 'sections' in yaml_config[args.session].keys():
-            for section_config in yaml_config[args.session]['sections']:
-                if not 'cmds' in section_config.keys():
-                    print('Main section needs a cmds index!'.format(window_name))
-                    sys.exit()
-                else:
-                    config[window_name]['sections'] = yaml_config[args.session]['sections']
-
-        # config[index] = {}
-        # config[index]['cmds'] = cmd # yaml_config[args.session]['windows'][index]['cmds']
-    else:
-        print('Window must be dict!')
-        sys.exit()
-
-print('YAML')
-print(config)
-# sys.exit()
 # -----------------------------------------------
 # Instantiate ultimux class
 # ----------------------------------------------- 
 session_name = args.session
-utmx = Ultimux(config, session_name)
+utmx = Ultimux(session_config, session_name)
 
 if args.interactive:
     utmx.set_interactive(True)
@@ -127,4 +78,4 @@ if args.synchronize:
     utmx.set_synchronize(True)
 
 utmx.create()
-utmx.attach()
+utmx.exec()
