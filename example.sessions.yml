@@ -1,26 +1,13 @@
 ---
 my_yaml_test:
-  cmds: 
+  sections: 
   - 'ls' # pane at the top
   - ['w', 'whoami'] # two panes next to eachother
-  - 'ssh northstar; w' # two consecutive commands 
+  - 'ssh northstar w' # two consecutive commands 
   windows:
-  - win1
-  - win2
-  - win3:
-    cmds:
-    - 'htop' # override default commands
+  - name: win1
+  - name: win2
+  - name: win3
+    sections:
+    - cmds: 'htop' # override default commands
   focus: '0.0' # focus
-my_yaml_test2: # second session, just to prove a point
-  cmds: 
-  - 'ls' # pane at the top
-  - ['w', 'whoami'] # two panes next to eachother
-  - 'ssh northstar; w' # two consecutive commands 
-  windows:
-  - win1
-  - win2
-  - win3:
-    cmds:
-    - 'htop' # override default commands
-  focus: '0.0' # focus
-  synchronize: false # synchronize panes

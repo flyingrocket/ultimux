@@ -7,15 +7,16 @@ config = {}
 
 for window in ['win1', 'win2']:
     config[window] = {}
-    config[window]['cmds'] = [
-    'ls', # pane at the top
-    ['w', 'whoami'], # two panes next to eachother
-    'ssh northstar; w' # pane at the bottom
+    config[window]['sections'] = [
+        {'cmds': 'ls'}, # pane at the top
+        {'cmds': ['w', 'whoami']}, # two panes next to eachother
+        {'cmds': 'ssh northstar; w'}, # pane at the bottom
     ]
            
 session_name = 'my_dict_test'
 utmx = Ultimux(config, session_name)
 utmx.set_focus('0.1')
+utmx.set_interactive(True)
 utmx.create()
-utmx.out()
-# utmx.attach()
+# utmx.out()
+utmx.attach()

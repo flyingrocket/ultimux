@@ -92,7 +92,8 @@ class Ultimux:
     def create(self):
            
         config = self.config
-        # print(config)
+        print('CONFIG')
+        print(config)
         
         # create a session, the first time you give the name of the first window with -n option
         self.tmux_cmds.append('tmux new-session -d -A -s ' + self.session_name + ' -n ' + list(self.config.keys())[0])
@@ -108,25 +109,47 @@ class Ultimux:
             
             # pane counter
             ii = 0
+            s = 0
+
+            print('++')
             
-            for command in config[window]['cmds']:
-                
+            for section in config[window]['sections']:
+
+                print('**************')
+                print('SECTION')
+                print(section)
+                print('*******')
+                print(section['cmds'])
+
                 if ii > 0:
                     self.tmux_cmds.append('tmux split-window -f -t ' + self.session_name)
             
                 # split window vertically
-                if isinstance(command, list):
+                if isinstance(section['cmds'], list):
+
+                    print('+')
+                    print(section['cmds'])
                     
                     # split counter
                     iii = 0
                 
-                    for comm in command: 
+                    for command in section['cmds']: 
                         
                         if iii > 0:
                             self.tmux_cmds.append('tmux split-window -h -t ' +self.session_name)
                         
                         target = self.session_name + ':' + str(i) + '.' + str(ii)
-                        self.parse_command(comm, target)
+
+                        ## TODO: remove duplicate code
+                        if 'ssh' in section.keys():
+                            command = 'ssh {}; {}'.format(section['ssh'], command)
+                        elif 'ssh' in config[window].keys():
+                            command = 'ssh {}; {}'.format(config[window]['ssh'], command)
+                        elif 'ssh' in config.keys():
+                            command = 'ssh {}; {}'.format(config['ssh'], command)
+
+
+                        self.parse_command(command, target)
                         
                         iii += 1
                         ii += 1
@@ -134,13 +157,26 @@ class Ultimux:
                 # no vertical split
                 else:
                     #print('single')
-                    comm = command
+                    command = section['cmds']
                     target = self.session_name + ':' + str(i) + '.' + str(ii)
-                    self.parse_command(comm, target)
+
+                    print('WINDOW')
+                    print(config[window])
+
+                    ## TODO: remove duplicate code
+                    if 'ssh' in section.keys():
+                        command = 'ssh {}; {}'.format(section['ssh'], command)
+                    elif 'ssh' in config[window].keys():
+                        command = 'ssh {}; {}'.format(config[window]['ssh'], command)
+                    elif 'ssh' in config.keys():
+                        command = 'ssh {}; {}'.format(config['ssh'], command)
+
+                    self.parse_command(command, target)
                     #print(comm)    
             
-                    ii += 1
-            i += 1
+                    ii += 1 # pane
+                s += 1 # section
+            i += 1 # window
 
         if self.synchronize:        
             self.tmux_cmds.append('tmux set-option -t ' +self.session_name + ' synchronize-panes on')
@@ -160,6 +196,7 @@ class Ultimux:
             comm = comm.strip(' ')
             enter = ''
             enter = 'C-m'
+
             self.tmux_cmds.append("tmux send-keys -t " + target + " '" + comm + "' " + enter)
         
     def out(self):

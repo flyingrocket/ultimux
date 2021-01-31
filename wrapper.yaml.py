@@ -58,10 +58,10 @@ with open(file_path) as file:
     else:
         sys.exit('{} file not supported!'.format(file_path))
 
-# print(yaml_config)
+print(yaml_config)
 
 if not args.session in yaml_config.keys():
-    print('Session not fountd!')
+    print('Session not found!')
     sys.exit()
 
 
@@ -73,23 +73,47 @@ if not 'windows' in yaml_config[args.session].keys():
 # Iterate window configs
 # -----------------------------------------------
 config = {}
-
 # iterate windows from config
-for window_name in yaml_config[args.session]['windows']:
+for window_item in yaml_config[args.session]['windows']:
 
-    if type(window_name) == dict:
-        # print(window_name)
-        index = list(window_name.keys())[0]
-        print('index=' + index)
-        cmds = window_name['cmds']
-        print(cmds)
-        config[index] = {}
-        config[index]['cmds'] = cmds # yaml_config[args.session]['windows'][index]['cmds']
+    # -----------------------------------------------
+    # Commands at window level
+    # -----------------------------------------------
+    if type(window_item) == dict:
+        # sections defined on window level
+        window_name = window_item['name']
+
+        config[window_name] = {}
+        # config[window_name] = yaml_config[args.session]['windows']
+        config[window_name]['sections'] = []
+
+        if 'sections' in window_item.keys():
+            for section_config in window_item['sections']:
+                print(section_config)
+                if not 'cmds' in section_config.keys():
+                    print('Section in {} needs a cmds index!'.format(window_name))
+                    sys.exit()
+                else:
+                    config[window_name]['sections'].append(section_config)
+
+        # sections defined at main level
+        elif 'sections' in yaml_config[args.session].keys():
+            for section_config in yaml_config[args.session]['sections']:
+                if not 'cmds' in section_config.keys():
+                    print('Main section needs a cmds index!'.format(window_name))
+                    sys.exit()
+                else:
+                    config[window_name]['sections'] = yaml_config[args.session]['sections']
+
+        # config[index] = {}
+        # config[index]['cmds'] = cmd # yaml_config[args.session]['windows'][index]['cmds']
     else:
-        index = window_name
-        config[index] = {}
-        config[index]['cmds'] = yaml_config[args.session]['cmds']
+        print('Window must be dict!')
+        sys.exit()
 
+print('YAML')
+print(config)
+# sys.exit()
 # -----------------------------------------------
 # Instantiate ultimux class
 # ----------------------------------------------- 
