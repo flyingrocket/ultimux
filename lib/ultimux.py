@@ -98,13 +98,13 @@ class Ultimux:
         # Global options
         # ---------------------------------------
         if session_config.get('synchronize'):
-            set_synchronize(session_config.get('synchronize'))
+            self.set_synchronize(session_config.get('synchronize'))
         
         if session_config.get('interactive'):
-            set_interactive(session_config.get('interactive'))
+            self.set_interactive(session_config.get('interactive'))
 
         if session_config.get('focus'):
-            set_focus(session_config.get('focus'))
+            self.set_focus(session_config.get('focus'))
        
         # ---------------------------------------
         # Create window if required
