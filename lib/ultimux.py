@@ -80,26 +80,12 @@ class Ultimux:
 
         self.interactive = interactive
 
-    # def set_session_unique_id(self, set_session_unique_id):
-
-    #     self.set_session_unique_id = set_session_unique_id
-
-    def set_synchronize(self, synchronize):
-
-        if not type(synchronize) == bool:
-            self.fail('Directive synchronize must be boolean!')
-
-        self.synchronize = synchronize
-
     def create(self):
            
         session_config = self.session_config
         # ---------------------------------------
         # Global options
-        # ---------------------------------------
-        if session_config.get('synchronize'):
-            self.set_synchronize(session_config.get('synchronize'))
-        
+        # ---------------------------------------       
         if session_config.get('interactive'):
             self.set_interactive(session_config.get('interactive'))
 
@@ -161,6 +147,15 @@ class Ultimux:
 
                 if ii > 0:
                     self.tmux_cmds.append("tmux split-window -f -t '{}'".format(self.session_name))
+
+
+                # if only a command or list is specified
+                if type(section) != dict:
+
+                    value = section
+
+                    section = {}
+                    section['cmds'] = value
             
                 # ---------------------------------------
                 # Split section (row)
@@ -189,6 +184,7 @@ class Ultimux:
                     if section.get('cmds'):
                         command = section['cmds']
                     else:
+                        # e.g. if only ssh is a key
                         command = ''
 
                     target = self.session_name + ':' + str(i) + '.' + str(ii)
@@ -196,14 +192,19 @@ class Ultimux:
                     self.parse_command(command, section, window, target)
             
                     ii += 1 # pane
+            
+            if 'synchronize' in window.keys():
+                if window.get('synchronize'):        
+                    self.tmux_cmds.append("tmux set-option -t '{}' synchronize-panes on".format(self.session_name))
+            elif session_config.get('synchronize'):
+                self.tmux_cmds.append("tmux set-option -t '{}' synchronize-panes on".format(self.session_name))
+            
             i += 1 # window
+
 
         # ---------------------------------------
         # Wrap up
         # ---------------------------------------
-        if self.synchronize:        
-            self.tmux_cmds.append("tmux set-option -t '{}' synchronize-panes on".format(self.session_name))
-
         self.tmux_cmds.append("tmux select-pane -t '{}:{}'".format(self.session_name, self.focus))
         self.tmux_cmds.append("tmux attach -t '{}:{}'".format(self.session_name, self.focus))
         
@@ -218,10 +219,10 @@ class Ultimux:
 
             ## TODO clean this up
             # directive in section gets priority
-            if section.get('ssh') and section['ssh'].get(directive):
+            if type(section) == dict and section.get('ssh') and section['ssh'].get(directive):
                 ssh_options[directive] = section['ssh'].get(directive)
             # directive in window 
-            elif window.get('ssh') and window['ssh'].get(directive):
+            elif type(window) == dict and window.get('ssh') and window['ssh'].get(directive):
                 ssh_options[directive] = window['ssh'].get(directive)
             # directive in session_config
             elif session_config.get('ssh') and session_config['ssh'].get(directive):

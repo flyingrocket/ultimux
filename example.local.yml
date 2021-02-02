@@ -1,5 +1,6 @@
 ---
-my_yaml_test:
+basic_layout:
+  focus: '0.0' # focus
   sections: 
   - 'ls' # pane at the top
   - ['w', 'whoami'] # two panes next to eachother
@@ -10,4 +11,15 @@ my_yaml_test:
   - name: win3
     sections:
     - cmds: 'htop' # override default commands
-  focus: '0.0' # focus
+synchronize_layout:
+  synchronize: true
+  sections: 
+  - '' # pane at the top
+  - ['', ''] # two panes next to eachother
+  - '' # two consecutive commands 
+  windows:
+  - name: win1
+    synchronize: true
+  - name: win2
+  - name: win3
+    synchronize: false

@@ -1,5 +1,5 @@
 ---
-ssh_yml_full:
+full_layout:
   ssh: 
     user: 'root'
     server: 'juggernaut'
@@ -26,7 +26,7 @@ ssh_yml_full:
   - name: 'window 3'
     sections:
     - cmds: 'sudo tail -f /var/log/auth.log'
-ssh_yml_minimal:
+minimal_layout:
   ssh: 
     login: true
   sections: 
@@ -37,3 +37,4 @@ ssh_yml_minimal:
   synchronize: true # synchronize panes
   focus: '0.1' # focus
   interactive: true
+  synchronize: true # synchronize panes

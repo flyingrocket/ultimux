@@ -25,10 +25,6 @@ parser.add_argument('-c', '--configfile', help='config yaml file', required=True
 # interactive mode
 parser.add_argument('-i', '--interactive', help='interactive mode', required=False, default=False, action='store_true')
 
-# synchronize
-parser.add_argument('-y', '--synchronize', help='synchronize panes', required=False, default=False, action='store_true')
-
-
 args = parser.parse_args()
 
 # default check arguments - this is redundant
@@ -73,9 +69,6 @@ utmx = Ultimux(session_config, session_name)
 
 if args.interactive:
     utmx.set_interactive(True)
-
-if args.synchronize:
-    utmx.set_synchronize(True)
 
 utmx.create()
 utmx.exec()
