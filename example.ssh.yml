@@ -38,3 +38,10 @@ minimal_layout:
   focus: '0.1' # focus
   interactive: true
   synchronize: true # synchronize panes
+commands_escape:
+  ssh:
+    login: true
+  sections:
+  - cmds: ['htop', 'varnishncsa', 'watch "netstat -anp | rg ''ESTABL.*''"' ]
+    ssh:
+      server: 'juggernaut'

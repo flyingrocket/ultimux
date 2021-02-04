@@ -4,7 +4,7 @@ basic_layout:
   sections: 
   - 'ls' # pane at the top
   - ['w', 'whoami'] # two panes next to eachother
-  - 'ssh northstar w' # two consecutive commands 
+  - 'ssh juggernaut; htop' # two consecutive commands 
   windows:
   - name: win1
   - name: win2
