@@ -39,9 +39,16 @@ minimal_layout:
   interactive: true
   synchronize: true # synchronize panes
 commands_escape:
+  layout: even-horizontal
   ssh:
     login: true
   sections:
-  - cmds: ['htop', 'varnishncsa', 'watch "netstat -anp | rg ''ESTABL.*''"' ]
+  - cmds: ['htop', 'sudo tail -f /var/log/auth.log', "watch \"netstat -anp | rg ''ESTABL.*''\"" ]
     ssh:
       server: 'juggernaut'
+remote_tmux:
+  ssh: 
+    server: juggernaut
+    login: true
+  sections:
+  - cmds: 'tmux new-session -s testje -d; tmux attach -t testje'
