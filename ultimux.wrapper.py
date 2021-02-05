@@ -39,11 +39,40 @@ if len(sys.argv) == 1:
 # -----------------------------------------------
 # Read yaml file
 # -----------------------------------------------
+homedir = os.getenv("HOME")
+config_file = args.configfile
 
-file_path = args.configfile
+full_paths = []
 
-if not os.path.isfile(file_path):
-    sys.exit('{} file not found!'.format(file_path))
+if re.match("^~\/", config_file):
+    full_paths.append(os.path.abspath(config_file.replace('~', homedir)))
+elif re.match("^\.\/", config_file) or re.match("^\/", config_file):
+    full_paths.append(os.path.abspath(config_file))
+else:
+    full_paths.append(os.path.abspath('./' + config_file))
+    full_paths.append(os.path.abspath(homedir + '/conf.d/ultimux/' + config_file))
+    full_paths.append('/etc/ultimux/conf.d/' + config_file)
+
+config_file_found = False
+
+# print(full_paths)
+# sys.exit()
+
+for full_path in full_paths:
+
+
+    # print('try ' + full_path)
+
+    if os.path.exists(full_path):
+        config_file_found = True
+
+        # set base for file
+        file_path = full_path
+
+        break
+
+if not config_file_found:
+    sys.exit('Config file "{}" not found!'.format(args.configfile))
 
 # read the yaml file
 with open(file_path) as file:

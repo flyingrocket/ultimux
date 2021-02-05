@@ -239,7 +239,7 @@ class Ultimux:
         self.tmux_cmds.append("tmux set -g default-terminal 'screen-256color'")
 
         # bind key for synch
-        self.tmux_cmds.append('tmux set -g bind-key a set-window-option synchronize-panes\; display-message "synchronize-panes is now #{?pane_synchronized,on,off}"')
+        # self.tmux_cmds.append('tmux set -g bind-key a set-window-option synchronize-panes\; display-message "synchronize-panes is now #{?pane_synchronized,on,off}"')
 
 
         # set focus
@@ -288,7 +288,7 @@ class Ultimux:
             # ---------------------------------------
             # Check connectivity
             # ---------------------------------------
-            if not destination in self.validated_destinations:
+            if not destination in self.validated_destinations and not self.debug:
 
                 # first check
                 if not len(self.validated_destinations):
@@ -326,6 +326,7 @@ class Ultimux:
             tcommand = tcommand.strip(' ')
 
             if self.debug:
+                tcommand = '# ' + tcommand
                 enter = ''
             else:
                 enter = 'C-m'
