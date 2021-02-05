@@ -3,10 +3,16 @@ basic_layout:
   focus: '0.0' # focus
   sections: 
   - 'ls' # pane at the top
-  - ['w', 'whoami'] # two panes next to eachother
+  - ['w', 'whoami', 'htop'] # two panes next to eachother
+  - 'ls' # pane at the top
+  - 'ls' # pane at the top
   - 'ssh northstar w' # two consecutive commands 
   windows:
-  - name: win1
+  - name: win10
+  - name: win11
+    layout: even-horizontal
+  - name: win12
+  - name: win13s
   - name: win2
   - name: win3
     sections:

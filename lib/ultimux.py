@@ -3,7 +3,10 @@
 import datetime, os, re, subprocess, sys
 
 class Ultimux:
-        
+
+    #########################################
+    # Application properties
+    #########################################    
     tmux_cmds = []
 
     session_config = {}
@@ -13,6 +16,12 @@ class Ultimux:
     app_name = 'ultimux'
 
     version = '1.0'
+
+    #########################################
+    # Dynamic properties
+    #########################################
+    
+    debug = False
 
     focus = '0.0'
 
@@ -65,6 +74,13 @@ class Ultimux:
     def fail(self, message = ''):
         print(message)
         sys.exit(1)
+
+    def set_debug(self, debug):
+
+        if not type(debug) == bool:
+            self.fail('Directive debug must be boolean!')
+
+        self.debug = debug
         
     def set_focus(self, focus):
 
@@ -198,13 +214,35 @@ class Ultimux:
                     self.tmux_cmds.append("tmux set-option -t '{}' synchronize-panes on".format(self.session_name))
             elif session_config.get('synchronize'):
                 self.tmux_cmds.append("tmux set-option -t '{}' synchronize-panes on".format(self.session_name))
+
+            layout = ''
+
+            if 'layout' in window.keys():
+                if window.get('layout'):        
+                    layout = window.get('layout')
+            elif session_config.get('layout'):
+                    layout = session_config.get('layout')
+            
+            # layout
+            if not layout == '':
+                self.tmux_cmds.append('tmux select-layout {}'.format(layout))
             
             i += 1 # window
 
 
         # ---------------------------------------
-        # Wrap up
+        # Set options and attach
         # ---------------------------------------
+        self.tmux_cmds.append('tmux set-option -g status-style bg=blue')
+
+        # support 256 colors
+        self.tmux_cmds.append("tmux set -g default-terminal 'screen-256color'")
+
+        # bind key for synch
+        self.tmux_cmds.append('tmux set -g bind-key a set-window-option synchronize-panes\; display-message "synchronize-panes is now #{?pane_synchronized,on,off}"')
+
+
+        # set focus
         self.tmux_cmds.append("tmux select-pane -t '{}:{}'".format(self.session_name, self.focus))
         self.tmux_cmds.append("tmux attach -t '{}:{}'".format(self.session_name, self.focus))
         
@@ -286,7 +324,11 @@ class Ultimux:
         
         for tcommand in tcommands:
             tcommand = tcommand.strip(' ')
-            enter = 'C-m'
+
+            if self.debug:
+                enter = ''
+            else:
+                enter = 'C-m'
 
             self.tmux_cmds.append("tmux send-keys -t " + target + " '" + tcommand + "' " + enter)
         

@@ -25,6 +25,10 @@ parser.add_argument('-c', '--configfile', help='config yaml file', required=True
 # interactive mode
 parser.add_argument('-i', '--interactive', help='interactive mode', required=False, default=False, action='store_true')
 
+# debug
+parser.add_argument('-d', '--debug', help='debug mode', required=False, default=False, action='store_true')
+
+
 args = parser.parse_args()
 
 # default check arguments - this is redundant
@@ -69,6 +73,9 @@ utmx = Ultimux(session_config, session_name)
 
 if args.interactive:
     utmx.set_interactive(True)
+
+if args.debug:
+    utmx.set_debug(True)
 
 utmx.create()
 utmx.exec()
