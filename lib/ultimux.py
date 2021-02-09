@@ -99,6 +99,7 @@ class Ultimux:
     def create(self):
            
         session_config = self.session_config
+        
         # ---------------------------------------
         # Global options
         # ---------------------------------------       
@@ -113,8 +114,14 @@ class Ultimux:
         # ---------------------------------------
         # check if window
         if not session_config.get('windows'):
+
+            window_config = {'name':'ultimux'}
+
+            if session_config.get('sections'):
+                window_config['sections'] = session_config['sections']
+
             session_config['windows'] = []
-            session_config['windows'].append({'name':'ultimux'})
+            session_config['windows'].append(window_config)
 
         # ---------------------------------------
         # Iterate windows
@@ -151,10 +158,14 @@ class Ultimux:
             # Default to global section
             # ---------------------------------------
             # global sections
-            if not window.get('sections'):
-                sections = session_config['sections']
-            else:
+            if window.get('sections'):
                 sections = window['sections']
+
+                # if session_config.get('sections'):
+                #     sections = {**session_config['sections'], **window['sections']}
+
+            else:
+                sections = session_config['sections']
 
             # ---------------------------------------
             # Iterate sections
@@ -172,6 +183,7 @@ class Ultimux:
 
                     section = {}
                     section['cmds'] = value
+
             
                 # ---------------------------------------
                 # Split section (row)
@@ -253,18 +265,39 @@ class Ultimux:
         # Get ssh config options
         # ---------------------------------------
         ssh_options = {}
-        for directive in ['user', 'server', 'login']:
 
-            ## TODO clean this up
-            # directive in section gets priority
-            if type(section) == dict and section.get('ssh') and section['ssh'].get(directive):
-                ssh_options[directive] = section['ssh'].get(directive)
-            # directive in window 
-            elif type(window) == dict and window.get('ssh') and window['ssh'].get(directive):
-                ssh_options[directive] = window['ssh'].get(directive)
-            # directive in session_config
-            elif session_config.get('ssh') and session_config['ssh'].get(directive):
-                ssh_options[directive] = session_config['ssh'].get(directive)
+        # merge these options
+        ssh_options1 = {}
+        if type(session_config) == dict and 'ssh' in session_config.keys():
+            section_ssh = session_config['ssh']
+            if not type(section_ssh) == dict:
+                ssh_options1['server'] = section_ssh
+            else:
+                ssh_options1 = session_config['ssh']
+        
+        ssh_options2 = {}
+        if type(window) == dict and 'ssh' in window.keys():
+            section_ssh = window['ssh']
+            if not type(section_ssh) == dict:
+                ssh_options2['server'] = section_ssh
+            else:
+                ssh_options2 = window['ssh']
+        
+        ssh_options3 = {}
+        if type(section) == dict and 'ssh' in section.keys():
+            section_ssh = section['ssh']
+            if not type(section_ssh) == dict:
+                ssh_options3['server'] = section_ssh
+            else:
+                ssh_options3 = section['ssh']
+
+        # print('--- ssh options ---')
+        # print(ssh_options1)
+        # print(ssh_options2)
+        # print(ssh_options3)
+
+        ssh_options = {**ssh_options1, **ssh_options2, **ssh_options3}
+    
         # ---------------------------------------
         # Compile ssh commands
         # ---------------------------------------
