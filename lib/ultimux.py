@@ -211,8 +211,11 @@ class Ultimux:
                 else:
                     if section.get('cmds'):
                         command = section['cmds']
+                    elif window.get('cmds'):
+                        command = window.get('cmds')
+                    elif session_config.get('cmds'):
+                        command = session_config.get('cmds')
                     else:
-                        # e.g. if only ssh is a key
                         command = ''
 
                     target = self.session_name + ':' + str(i) + '.' + str(ii)
@@ -343,9 +346,9 @@ class Ultimux:
             # Ssh remote or login 
             # ---------------------------------------
             # run ssh command remotely or login
-            seperator = ''
-            if ssh_options.get('login'):
-                seperator = ';'
+            seperator = ';'
+            if 'login' in ssh_options and not ssh_options.get('login'):
+                seperator = ''
 
             # add ssh prefix to command 
             command = '{}{} {}'.format(ssh_command, seperator, command)
