@@ -1,13 +1,13 @@
 #! /usr/bin/env python3
 
-import datetime, os, re, subprocess, sys
+import ast, datetime, os, re, subprocess, sys
 
 class Ultimux:
 
     #########################################
     # Application properties
     #########################################    
-    tmux_cmds = []
+    tmux_commands = []
 
     session_config = {}
     
@@ -58,7 +58,7 @@ class Ultimux:
         #########################################
         # Set defaults
         #########################################
-        self.tmux_cmds = []
+        self.tmux_commands = []
 
         self.focus = '0.0'
 
@@ -99,7 +99,11 @@ class Ultimux:
     def create(self):
            
         session_config = self.session_config
-        
+
+        # backward compatibility - replace keys
+        session_config = ast.literal_eval(repr(session_config).replace('cmds','shell'))
+        session_config = ast.literal_eval(repr(session_config).replace('sections','panes'))
+     
         # ---------------------------------------
         # Global options
         # ---------------------------------------       
@@ -117,8 +121,8 @@ class Ultimux:
 
             window_config = {'name':'ultimux'}
 
-            if session_config.get('sections'):
-                window_config['sections'] = session_config['sections']
+            if session_config.get('panes'):
+                window_config['panes'] = session_config['panes']
 
             session_config['windows'] = []
             session_config['windows'].append(window_config)
@@ -144,91 +148,102 @@ class Ultimux:
             # ---------------------------------------
             # Create tmux session/window
             # ---------------------------------------
+            # first loop: create a session + window with -n option
+            if i == 0:
+                self.tmux_commands.append("tmux new-session -d -A -s {} -n '{}'".format(self.session_name, window_name))
             # first window is alreay set, skip
-            if i > 0:
-                self.tmux_cmds.append("tmux new-window -t '{}' -n '{}' ".format(self.session_name, window_name))
             else:
-                # first loop: create a session + window with -n option
-                self.tmux_cmds.append("tmux new-session -d -A -s {} -n '{}'".format(self.session_name, window_name))
+                self.tmux_commands.append("tmux new-window -t '{}' -n '{}' ".format(self.session_name, window_name))
             
             # pane counter
             ii = 0
 
             # ---------------------------------------
-            # Default to global section
+            # Default to global pane
             # ---------------------------------------
-            # global sections
-            if window.get('sections'):
-                sections = window['sections']
-
-                # if session_config.get('sections'):
-                #     sections = {**session_config['sections'], **window['sections']}
+            # global panes
+            if window.get('panes'):
+                panes = window['panes']
 
             else:
-                sections = session_config['sections']
+                panes = session_config['panes']
 
             # ---------------------------------------
-            # Iterate sections
+            # Iterate panes
             # ---------------------------------------
-            for section in sections:
+            for pane in panes:
 
+                # full split for new pane (row) 
                 if ii > 0:
-                    self.tmux_cmds.append("tmux split-window -f -t '{}'".format(self.session_name))
+                    self.tmux_commands.append("tmux split-window -f -t '{}'".format(self.session_name))
 
 
                 # if only a command or list is specified
-                if type(section) != dict:
+                if type(pane) != dict:
 
-                    value = section
+                    shell_command = pane
 
-                    section = {}
-                    section['cmds'] = value
+                    pane = {}
+                    pane['shell'] = shell_command
 
             
                 # ---------------------------------------
-                # Split section (row)
+                # Split pane (row)
                 # ---------------------------------------
-                if section.get('cmds') and isinstance(section['cmds'], list):
+                if pane.get('shell') and isinstance(pane['shell'], list):
                    
                     # split counter
                     iii = 0
                 
-                    for command in section['cmds']: 
+                    for cmd in pane['shell']: 
+
+                        # print(cmd)
+                        split = '-h'
+                        command = cmd
+                        
+                        if type(cmd) == dict:
+                            command = cmd['shell']
+
+                            if 'split' in cmd.keys():
+                                split = cmd['split']
+
+                        if not split in ['-v', '-h']:
+                            self.fail('Illegal split! Use -v or -h...')
                         
                         if iii > 0:
-                            self.tmux_cmds.append("tmux split-window -h -t '{}'".format(self.session_name))
+                            self.tmux_commands.append("tmux split-window {} -t '{}'".format(split, self.session_name))
                         
                         target = self.session_name + ':' + str(i) + '.' + str(ii)
 
-                        self.parse_command(command, section, window, target)
+                        self.parse_command(command, pane, window, target)
                         
                         iii += 1
                         ii += 1
                             
                 # ---------------------------------------
-                # Regular section (row)
+                # Regular pane (row)
                 # ---------------------------------------
                 else:
-                    if section.get('cmds'):
-                        command = section['cmds']
-                    elif window.get('cmds'):
-                        command = window.get('cmds')
-                    elif session_config.get('cmds'):
-                        command = session_config.get('cmds')
+                    if pane.get('shell'):
+                        command = pane['shell']
+                    elif window.get('shell'):
+                        command = window.get('shell')
+                    elif session_config.get('shell'):
+                        command = session_config.get('shell')
                     else:
                         command = ''
 
                     target = self.session_name + ':' + str(i) + '.' + str(ii)
 
-                    self.parse_command(command, section, window, target)
+                    self.parse_command(command, pane, window, target)
             
                     ii += 1 # pane
             
             if 'synchronize' in window.keys():
                 if window.get('synchronize'):        
-                    self.tmux_cmds.append("tmux set-option -t '{}' synchronize-panes on".format(self.session_name))
+                    self.tmux_commands.append("tmux set-option -t '{}' synchronize-panes on".format(self.session_name))
             elif session_config.get('synchronize'):
-                self.tmux_cmds.append("tmux set-option -t '{}' synchronize-panes on".format(self.session_name))
+                self.tmux_commands.append("tmux set-option -t '{}' synchronize-panes on".format(self.session_name))
 
             layout = ''
 
@@ -240,7 +255,7 @@ class Ultimux:
             
             # layout
             if not layout == '':
-                self.tmux_cmds.append('tmux select-layout {}'.format(layout))
+                self.tmux_commands.append('tmux select-layout {}'.format(layout))
             
             i += 1 # window
 
@@ -248,20 +263,16 @@ class Ultimux:
         # ---------------------------------------
         # Set options and attach
         # ---------------------------------------
-        self.tmux_cmds.append('tmux set-option -g status-style bg=blue')
+        self.tmux_commands.append('tmux set-option -g status-style bg=blue')
 
         # support 256 colors
-        self.tmux_cmds.append("tmux set -g default-terminal 'screen-256color'")
-
-        # bind key for synch
-        # self.tmux_cmds.append('tmux set -g bind-key a set-window-option synchronize-panes\; display-message "synchronize-panes is now #{?pane_synchronized,on,off}"')
-
+        self.tmux_commands.append("tmux set -g default-terminal 'screen-256color'")
 
         # set focus
-        self.tmux_cmds.append("tmux select-pane -t '{}:{}'".format(self.session_name, self.focus))
-        self.tmux_cmds.append("tmux attach -t '{}:{}'".format(self.session_name, self.focus))
+        self.tmux_commands.append("tmux select-pane -t '{}:{}'".format(self.session_name, self.focus))
+        self.tmux_commands.append("tmux attach -t '{}:{}'".format(self.session_name, self.focus))
         
-    def parse_command(self, command, section, window, target): 
+    def parse_command(self, command, pane, window, target): 
 
         session_config = self.session_config
         # ---------------------------------------
@@ -272,32 +283,27 @@ class Ultimux:
         # merge these options
         ssh_options1 = {}
         if type(session_config) == dict and 'ssh' in session_config.keys():
-            section_ssh = session_config['ssh']
-            if not type(section_ssh) == dict:
-                ssh_options1['server'] = section_ssh
+            pane_ssh = session_config['ssh']
+            if not type(pane_ssh) == dict:
+                ssh_options1['server'] = pane_ssh
             else:
                 ssh_options1 = session_config['ssh']
         
         ssh_options2 = {}
         if type(window) == dict and 'ssh' in window.keys():
-            section_ssh = window['ssh']
-            if not type(section_ssh) == dict:
-                ssh_options2['server'] = section_ssh
+            pane_ssh = window['ssh']
+            if not type(pane_ssh) == dict:
+                ssh_options2['server'] = pane_ssh
             else:
                 ssh_options2 = window['ssh']
         
         ssh_options3 = {}
-        if type(section) == dict and 'ssh' in section.keys():
-            section_ssh = section['ssh']
-            if not type(section_ssh) == dict:
-                ssh_options3['server'] = section_ssh
+        if type(pane) == dict and 'ssh' in pane.keys():
+            pane_ssh = pane['ssh']
+            if not type(pane_ssh) == dict:
+                ssh_options3['server'] = pane_ssh
             else:
-                ssh_options3 = section['ssh']
-
-        # print('--- ssh options ---')
-        # print(ssh_options1)
-        # print(ssh_options2)
-        # print(ssh_options3)
+                ssh_options3 = pane['ssh']
 
         ssh_options = {**ssh_options1, **ssh_options2, **ssh_options3}
     
@@ -367,12 +373,12 @@ class Ultimux:
             else:
                 enter = 'C-m'
 
-            self.tmux_cmds.append("tmux send-keys -t " + target + " '" + tcommand + "' " + enter)
+            self.tmux_commands.append("tmux send-keys -t " + target + " '" + tcommand + "' " + enter)
         
     def out(self):
         print()
 
-        for tcomm in self.tmux_cmds:
+        for tcomm in self.tmux_commands:
             print(tcomm)
     
     def exec(self):
@@ -382,21 +388,11 @@ class Ultimux:
             self.out()
 
             print()
-            print('Execute these commands? [Y/n]')
-            answer = input()
+            answer = input('Execute these commands? [Y/n] ')
 
             if answer != 'Y' and answer != '':
                 self.fail()
 
-        for subcommand in self.tmux_cmds:
+        for subcommand in self.tmux_commands:
             os.system(subcommand)
-
-            ## TODO: Does not work with spaces or semi-colons, etc
-            # print(subcommand.split()) 
-            # try:    
-            #     # split the subcommand into a list
-            #     subprocess.check_output(subcommand.split(), stderr=subprocess.STDOUT)  
-            # except subprocess.CalledProcessError as e:
-            #     print(e)
-            #     self.fail('Failed tmux command!')  
         

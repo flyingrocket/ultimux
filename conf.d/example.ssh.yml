@@ -4,15 +4,15 @@ full_layout:
     user: 'root'
     server: 'juggernaut'
     login: false
-  sections: 
-  - cmds: 'echo 1' # pane at the top
+  panes: 
+  - shell: 'echo 1' # pane at the top
     ssh: 
       server: 'iceman'
       login: true
-  - cmds: ['echo 2', 'echo 3'] # two panes next to eachother
+  - shell: ['echo 2', 'echo 3'] # two panes next to eachother
     ssh: 
       server: 'cyclops'
-  - cmds: 'echo 4'  
+  - shell: 'echo 4'  
   windows:
   - name: 'window 1'
   - name: 'window 2'
@@ -20,16 +20,16 @@ full_layout:
       server: 'northstar'
       user: brdooms
       login: true
-    sections:
-    - cmds: 'echo 5'
-    - cmds: 'echo 6'
+    panes:
+    - shell: 'echo 5'
+    - shell: 'echo 6'
   - name: 'window 3'
-    sections:
-    - cmds: 'sudo tail -f /var/log/auth.log'
+    panes:
+    - shell: 'sudo tail -f /var/log/auth.log'
 minimal_layout:
   ssh: 
     login: true
-  sections: 
+  panes: 
   - ssh: 
       server: 'iceman'
   - ssh: 
@@ -42,13 +42,13 @@ commands_escape:
   layout: even-horizontal
   ssh:
     login: true
-  sections:
-  - cmds: ['htop', 'sudo tail -f /var/log/auth.log', "watch \"netstat -anp | rg ''ESTABL.*''\"" ]
+  panes:
+  - shell: ['htop', 'sudo tail -f /var/log/auth.log', "watch \"netstat -anp | rg ''ESTABL.*''\"" ]
     ssh:
       server: 'juggernaut'
 remote_tmux:
   ssh: 
     server: juggernaut
     login: true
-  sections:
-  - cmds: 'tmux new-session -s testje -d; tmux attach -t testje'
+  panes:
+  - shell: 'tmux new-session -s testje -d; tmux attach -t testje'
