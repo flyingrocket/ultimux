@@ -164,9 +164,16 @@ class Ultimux:
             # global panes
             if window.get('panes'):
                 panes = window['panes']
-
-            else:
+            elif session_config.get('panes'):
                 panes = session_config['panes']
+            else:
+                if 'shell' in session_config:
+                    panes = [{'shell': session_config.get('shell')}]
+                else:
+                    self.fail('Panes or shell are not defined!')
+
+            if type(panes) != list:
+                self.fail('Could not parse panes, not a list!')
 
             # ---------------------------------------
             # Iterate panes
@@ -177,67 +184,51 @@ class Ultimux:
                 if ii > 0:
                     self.tmux_commands.append("tmux split-window -f -t '{}'".format(self.session_name))
 
-
-                # if only a command or list is specified
-                if type(pane) != dict:
-
-                    shell_command = pane
-
-                    pane = {}
-                    pane['shell'] = shell_command
-
-            
-                # ---------------------------------------
-                # Split pane (row)
-                # ---------------------------------------
-                if pane.get('shell') and isinstance(pane['shell'], list):
-                   
-                    # split counter
-                    iii = 0
-                
-                    for cmd in pane['shell']: 
-
-                        # print(cmd)
-                        split = '-h'
-                        command = cmd
-                        
-                        if type(cmd) == dict:
-                            command = cmd['shell']
-
-                            if 'split' in cmd.keys():
-                                split = cmd['split']
-
-                        if not split in ['-v', '-h']:
-                            self.fail('Illegal split! Use -v or -h...')
-                        
-                        if iii > 0:
-                            self.tmux_commands.append("tmux split-window {} -t '{}'".format(split, self.session_name))
-                        
-                        target = self.session_name + ':' + str(i) + '.' + str(ii)
-
-                        self.parse_command(command, pane, window, target)
-                        
-                        iii += 1
-                        ii += 1
-                            
-                # ---------------------------------------
-                # Regular pane (row)
-                # ---------------------------------------
+                if type(pane) == dict:
+                    if 'shell' not in pane.keys():
+                        if window.get('shell'):
+                            pane['shell'] = self.parse_shell(window.get('shell'))
+                        elif session_config.get('shell'):
+                            pane['shell'] = self.parse_shell(session_config.get('shell'))
+                        else:
+                            pane['shell'] = ['']
                 else:
-                    if pane.get('shell'):
-                        command = pane['shell']
-                    elif window.get('shell'):
-                        command = window.get('shell')
-                    elif session_config.get('shell'):
-                        command = session_config.get('shell')
-                    else:
-                        command = ''
+                    yml_cmds = self.parse_shell(pane)
+                    pane = {}
+                    pane['shell'] = yml_cmds
 
+                cmds = self.parse_shell(pane['shell'])
+
+                if type(cmds) != list:
+                    self.fail('Could not parse cmds, not a list!')
+
+                # split counter
+                iii = 0
+
+                for cmd in cmds: 
+
+                    # print(cmd)
+                    split = '-h'
+                    command = cmd
+                    
+                    if type(cmd) == dict:
+                        command = cmd['shell']
+
+                        if 'split' in cmd.keys():
+                            split = cmd['split']
+
+                    if not split in ['-v', '-h']:
+                        self.fail('Illegal split! Use -v or -h...')
+                    
+                    if iii > 0:
+                        self.tmux_commands.append("tmux split-window {} -t '{}'".format(split, self.session_name))
+                    
                     target = self.session_name + ':' + str(i) + '.' + str(ii)
 
                     self.parse_command(command, pane, window, target)
-            
-                    ii += 1 # pane
+                    
+                    iii += 1
+                    ii += 1
             
             if 'synchronize' in window.keys():
                 if window.get('synchronize'):        
@@ -271,6 +262,21 @@ class Ultimux:
         # set focus
         self.tmux_commands.append("tmux select-pane -t '{}:{}'".format(self.session_name, self.focus))
         self.tmux_commands.append("tmux attach -t '{}:{}'".format(self.session_name, self.focus))
+
+
+    def parse_shell(self, shell_command = ''):
+
+        formatted = {}
+
+        # if only a command or list is specified
+        if shell_command == None:
+            formatted = ['']
+        elif type(shell_command) == str:
+            formatted = [shell_command]
+        else: # type(shell_command) == list:
+            formatted = shell_command
+        
+        return formatted
         
     def parse_command(self, command, pane, window, target): 
 
