@@ -1,13 +1,11 @@
 #! /usr/bin/env python3
-# parse cli arguments
+
 import argparse
-# os module
+import glob
+import inquirer
 import os
-# import the Regex module
 import re
-# sys
 import sys
-# yaml supprt
 import yaml
 
 # ultimux
@@ -18,9 +16,10 @@ from lib.ultimux import Ultimux
 # -----------------------------------------------
 parser = argparse.ArgumentParser(description='plone cluster manager')
 # show server info
-parser.add_argument('-s', '--session', help='select session', required=True)
+parser.add_argument('-s', '--session', help='select session', required=False)
+
 # show cluster info
-parser.add_argument('-c', '--configfile', help='config yaml file', required=True)
+parser.add_argument('-c', '--configfile', help='config yaml file', required=False)
 
 # interactive mode
 parser.add_argument('-i', '--interactive', help='interactive mode', required=False, default=False, action='store_true')
@@ -28,55 +27,53 @@ parser.add_argument('-i', '--interactive', help='interactive mode', required=Fal
 # debug
 parser.add_argument('-d', '--debug', help='debug mode', required=False, default=False, action='store_true')
 
-
 args = parser.parse_args()
 
-# default check arguments - this is redundant
-if len(sys.argv) == 1:
-    print('Need argument')
-    sys.exit()
-
 # -----------------------------------------------
-# Read yaml file
+# Get config file
 # -----------------------------------------------
 homedir = os.getenv("HOME")
 config_file = args.configfile
 
-full_paths = []
-
-if re.match("^~\/", config_file):
-    full_paths.append(os.path.abspath(config_file.replace('~', homedir)))
-elif re.match("^\.\/", config_file) or re.match("^\/", config_file):
-    full_paths.append(os.path.abspath(config_file))
+if args.configfile:
+    if re.match("^~\/", config_file):
+        file_path = os.path.abspath(config_file.replace('~', homedir))
+    elif re.match("^\.\/", config_file) or re.match("^\/", config_file):
+        file_path = os.path.abspath(config_file)
+    else:
+        file_path = os.path.abspath('./' + config_file)
 else:
-    full_paths.append(os.path.abspath('./' + config_file))
-    full_paths.append(os.path.abspath(homedir + '/conf.d/ultimux/' + config_file))
-    full_paths.append('/etc/ultimux/conf.d/' + config_file)
+    # search paths
+    paths_found = []
+    paths_search = [os.path.abspath(homedir) + '/conf.d/ultimux/', '/etc/ultimux/conf.d/']
 
-config_file_found = False
+    for path in paths_search:
+        if os.path.exists(path):
+            paths_found.append(path)
 
-# print(full_paths)
-# sys.exit()
+    if not len(paths_found):
+        paths_search_display = ', '.join(paths_search)
+        sys.exit(f'No config files found in: {paths_search_display}')
 
-for full_path in full_paths:
+        # full_paths.append(os.path.abspath(homedir + '/conf.d/ultimux/' + config_file))
+        # full_paths.append('/etc/ultimux/conf.d/' + config_file)
 
+    config_files = []
+    for path in paths_found:
+        config_files += glob.glob(f"{path}*.yml")
 
-    # print('try ' + full_path)
+    questions = [inquirer.List('select_path', message=f'Select config file:', choices=config_files,),]
+    answers = inquirer.prompt(questions)
+    file_path = answers['select_path']
 
-    if os.path.exists(full_path):
-        config_file_found = True
+if not os.path.exists(file_path):
+    sys.exit(f'Config file "{file_path}" not found!')
 
-        # set base for file
-        file_path = full_path
-
-        break
-
-if not config_file_found:
-    sys.exit('Config file "{}" not found!'.format(args.configfile))
-
+# -----------------------------------------------
+# Read yaml file
+# -----------------------------------------------
 # read the yaml file
 with open(file_path) as file:
-    # config = yaml.load(file, Loader=yaml.SafeLoader)
 
     if re.search('.+\.ya?ml$', file_path):
         try:
@@ -87,17 +84,24 @@ with open(file_path) as file:
     else:
         sys.exit('{} file not supported!'.format(file_path))
 
-if not args.session in yaml_config.keys():
+# -----------------------------------------------
+# Get session name
+# -----------------------------------------------
+if args.session:
+    session_name = args.session
+else:
+    questions = [inquirer.List('select_session', message=f'Select session:', choices=yaml_config.keys(),),]
+    answers = inquirer.prompt(questions)
+    session_name = answers['select_session']
+
+if not session_name in yaml_config.keys():
     print('Session not found!')
     sys.exit()
-
-
-session_config = yaml_config[args.session]
 
 # -----------------------------------------------
 # Instantiate ultimux class
 # ----------------------------------------------- 
-session_name = args.session
+session_config = yaml_config[session_name]
 utmx = Ultimux(session_config, session_name)
 
 if args.interactive:
