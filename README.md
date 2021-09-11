@@ -1,17 +1,30 @@
-# Installation
+# ultimux
 
-Install tmux
+## Description
+
+Start tmux sessions based on yaml config.
+
+## Installation
+
+Install tmux, e.g. in Ubuntu:
 ```
 sudo apt install tmux
 ```
 
-# Use class in a python script
-
+Install pip packages:
+```bash
+pip install -r requirements.txt
 ```
-./wrapper.python.py
+
+## Usage
+
+See -h for options
+
+```bash
+./ultimux.wrapper.py -h
 ```
 
-# Use the yaml wrapper
+## Examples
 
 Create a session with 3 windows, override setup for widow 3. Set default ssh options. Overwrite options for some servers.
 ```
@@ -21,23 +34,4 @@ Create a session with 3 windows, override setup for widow 3. Set default ssh opt
 Ssh into 2 machines and synchronize:
 ```
 ./ultimux.wrapper.py -c ./example.ssh.yml -s ssh_yml_minimal 
-```
-
-# Layout
-```
-     even-horizontal
-             Panes are spread out evenly from left to right across the window.
-
-     even-vertical
-             Panes are spread evenly from top to bottom.
-
-     main-horizontal
-             A large (main) pane is shown at the top of the window and the remaining panes are spread from left to right in the leftover space at the bottom.  Use the
-             main-pane-height window option to specify the height of the top pane.
-
-     main-vertical
-             Similar to main-horizontal but the large pane is placed on the left and the others spread from top to bottom along the right.  See the main-pane-width window option.
-
-     tiled   Panes are spread out as evenly as possible over the window in both rows and columns.
-
 ```
