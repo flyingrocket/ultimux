@@ -14,12 +14,21 @@ from lib.ultimux import Ultimux
 # -----------------------------------------------
 # Arguments
 # -----------------------------------------------
-parser = argparse.ArgumentParser(description='plone cluster manager')
+parser = argparse.ArgumentParser(description='ultimux tmux wrapper')
 # show server info
 parser.add_argument('-s', '--session', help='select session', required=False)
 
-# show cluster info
+# synchronize
+parser.add_argument('--sync', help='synchronize panes', required=False, action='store_true')
+
+# tiled
+parser.add_argument('--tiled', help='spread panes evenly', required=False, action='store_true')
+
+# use config
 parser.add_argument('-c', '--configfile', help='config yaml file', required=False)
+ 
+# list sessions
+parser.add_argument('-l', '--list', help='list sessions', required=False, action='store_true')
 
 # interactive mode
 parser.add_argument('-i', '--interactive', help='interactive mode', required=False, default=False, action='store_true')
@@ -90,6 +99,13 @@ with open(file_path) as file:
         sys.exit('{} file not supported!'.format(file_path))
 
 # -----------------------------------------------
+# List sessions
+# ----------------------------------------------- 
+if args.list:
+    print('\n'.join(list(yaml_config.keys())))
+    sys.exit()
+
+# -----------------------------------------------
 # Get session name
 # -----------------------------------------------
 if args.session:
@@ -114,6 +130,12 @@ if args.interactive:
 
 if args.debug:
     utmx.set_debug(True)
+
+if args.sync:
+    utmx.set_sync(True)
+
+if args.tiled:
+    utmx.set_tiled(True)
 
 utmx.create()
 utmx.exec()

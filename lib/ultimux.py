@@ -21,11 +21,13 @@ class Ultimux:
     # Dynamic properties
     #########################################
     
+    col = False
+
     debug = False
 
     focus = '0.0'
 
-    synchronize = False
+    sync = False
 
     validated_destinations = []
 
@@ -69,7 +71,10 @@ class Ultimux:
         self.set_session_unique_id = True
         
         # sycnchronize panes
-        self.synchronize = False
+        self.sync = False
+        
+        # columns
+        self.tiled = False
 
     def fail(self, message = ''):
         print(message)
@@ -95,6 +100,21 @@ class Ultimux:
             self.fail('Directive interactive must be boolean!')
 
         self.interactive = interactive
+
+    def set_tiled(self, tiled):
+
+        if not type(tiled) == bool:
+            self.fail('Directive tiled must be boolean!')
+
+        self.tiled = tiled
+ 
+    def set_sync(self, sync):
+
+        if not type(sync) == bool:
+            self.fail('Directive sync must be boolean!')
+
+        self.sync = sync
+
 
     def create(self):
            
@@ -230,10 +250,17 @@ class Ultimux:
                     iii += 1
                     ii += 1
             
-            if 'synchronize' in window.keys():
-                if window.get('synchronize'):        
-                    self.tmux_commands.append("tmux set-option -t '{}' synchronize-panes on".format(self.session_name))
+            synchronize_panes = False
+
+            if self.sync:
+                synchronize_panes = True
+            elif 'synchronize' in window.keys():
+                 if window.get('synchronize'):        
+                    synchronize_panes = True
             elif session_config.get('synchronize'):
+                    synchronize_panes = True
+
+            if synchronize_panes:
                 self.tmux_commands.append("tmux set-option -t '{}' synchronize-panes on".format(self.session_name))
 
             layout = ''
@@ -243,6 +270,9 @@ class Ultimux:
                     layout = window.get('layout')
             elif session_config.get('layout'):
                     layout = session_config.get('layout')
+
+            if self.tiled:
+                layout = 'tiled'
             
             # layout
             if not layout == '':
