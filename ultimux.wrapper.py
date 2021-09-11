@@ -50,7 +50,7 @@ else:
     paths_found = []
     
     confdir_current = dname + '/conf.d/'
-    confdir_home = os.path.abspath(homedir) + '/conf.d/ultimux/'
+    confdir_home = os.path.abspath(homedir) + '/.ultimux/conf.d/'
     confdir_global = '/etc/ultimux/conf.d/'
 
     paths_search = [confdir_home, confdir_global]

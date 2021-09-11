@@ -24,6 +24,10 @@ See -h for options
 ./ultimux.wrapper.py -h
 ```
 
+## Configuration
+
+Config files may be passed to the script with the -c flag. If no flag is set, ultimux will search in ~/.ultimux/conf.d or /etc/ultimux/conf.d.
+
 ## Examples
 
 Create a session with 3 windows, override setup for widow 3. Set default ssh options. Overwrite options for some servers.
