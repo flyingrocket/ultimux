@@ -44,8 +44,16 @@ if args.configfile:
         file_path = os.path.abspath('./' + config_file)
 else:
     # search paths
+    abspath = os.path.abspath(__file__)
+    dname = os.path.dirname(abspath)
+
     paths_found = []
-    paths_search = [os.path.abspath(homedir) + '/conf.d/ultimux/', '/etc/ultimux/conf.d/']
+    
+    confdir_current = dname + '/conf.d/'
+    confdir_home = os.path.abspath(homedir) + '/conf.d/ultimux/'
+    confdir_global = '/etc/ultimux/conf.d/'
+
+    paths_search = [confdir_home, confdir_global]
 
     for path in paths_search:
         if os.path.exists(path):
@@ -54,9 +62,6 @@ else:
     if not len(paths_found):
         paths_search_display = ', '.join(paths_search)
         sys.exit(f'No config files found in: {paths_search_display}')
-
-        # full_paths.append(os.path.abspath(homedir + '/conf.d/ultimux/' + config_file))
-        # full_paths.append('/etc/ultimux/conf.d/' + config_file)
 
     config_files = []
     for path in paths_found:
