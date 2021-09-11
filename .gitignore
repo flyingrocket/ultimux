@@ -1,4 +1,6 @@
 __pycache__
+__init__.py
 *log
 test*
-*kate-swp
+*swp
+.vscode
