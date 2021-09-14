@@ -11,10 +11,12 @@ import yaml
 # ultimux
 from lib.ultimux import Ultimux
 
+appname = 'ultimux'
+
 # -----------------------------------------------
 # Arguments
 # -----------------------------------------------
-parser = argparse.ArgumentParser(description='ultimux tmux wrapper')
+parser = argparse.ArgumentParser(description='Ultimux - tmux wrapper')
 # show server info
 parser.add_argument('-s', '--session', help='select session', required=False)
 
@@ -25,8 +27,11 @@ parser.add_argument('--sync', help='synchronize panes', required=False, action='
 parser.add_argument('--tiled', help='spread panes evenly', required=False, action='store_true')
 
 # use config
-parser.add_argument('-c', '--configfile', help='config yaml file', required=False)
- 
+group = parser.add_mutually_exclusive_group(required=True)
+group.add_argument('-c', '--configfile', help='config yaml file', required=False)
+group.add_argument('-b', '--browse', help='browse through all available configs', required=False, action='store_true')
+group.add_argument('-d', '--configdir', help='browse through given config dir', required=False)
+
 # list sessions
 parser.add_argument('-l', '--list', help='list sessions', required=False, action='store_true')
 
@@ -34,7 +39,7 @@ parser.add_argument('-l', '--list', help='list sessions', required=False, action
 parser.add_argument('-i', '--interactive', help='interactive mode', required=False, default=False, action='store_true')
 
 # debug
-parser.add_argument('-d', '--debug', help='debug mode', required=False, default=False, action='store_true')
+parser.add_argument('--debug', help='debug mode', required=False, default=False, action='store_true')
 
 args = parser.parse_args()
 
@@ -57,24 +62,31 @@ else:
     dname = os.path.dirname(abspath)
 
     paths_found = []
-    
-    confdir_current = dname + '/conf.d/'
-    confdir_home = os.path.abspath(homedir) + '/.ultimux/conf.d/'
-    confdir_global = '/etc/ultimux/conf.d/'
 
-    paths_search = [confdir_home, confdir_global]
+    if args.configdir:
+        paths_search = [args.configdir]
+    else:
+        confdir_current = dname + '/conf.d/'
+        confdir_home = os.path.abspath(homedir) + f'/.{appname}/conf.d/'
+        confdir_global = f'/etc/{appname}/conf.d/'
+
+        paths_search = [confdir_home, confdir_global]
 
     for path in paths_search:
         if os.path.exists(path):
             paths_found.append(path)
 
+    paths_search_display = ', '.join(paths_search)
+
     if not len(paths_found):
-        paths_search_display = ', '.join(paths_search)
-        sys.exit(f'No config files found in: {paths_search_display}')
+        sys.exit(f'No config dirs found: {paths_search_display}')
 
     config_files = []
     for path in paths_found:
         config_files += glob.glob(f"{path}*.yml")
+
+    if not len(config_files):
+        sys.exit(f'No config files found: {paths_search_display}')
 
     questions = [inquirer.List('select_path', message=f'Select config file:', choices=config_files,),]
     answers = inquirer.prompt(questions)
@@ -100,7 +112,7 @@ with open(file_path) as file:
 
 # -----------------------------------------------
 # List sessions
-# ----------------------------------------------- 
+# -----------------------------------------------
 if args.list:
     print('\n'.join(list(yaml_config.keys())))
     sys.exit()
@@ -121,7 +133,7 @@ if not session_name in yaml_config.keys():
 
 # -----------------------------------------------
 # Instantiate ultimux class
-# ----------------------------------------------- 
+# -----------------------------------------------
 session_config = yaml_config[session_name]
 utmx = Ultimux(session_config, session_name)
 
