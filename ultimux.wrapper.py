@@ -96,7 +96,7 @@ if not os.path.exists(file_path):
     sys.exit(f'Config file "{file_path}" not found!')
 
 # -----------------------------------------------
-# Read yaml file
+# Read config file
 # -----------------------------------------------
 # read the yaml file
 with open(file_path) as file:
