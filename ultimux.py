@@ -25,7 +25,7 @@ default_browse_dirs = f"/etc/{appname}/conf.d/,{homedir}/.{appname}/conf.d/"
 # -----------------------------------------------
 # Arguments
 # -----------------------------------------------
-parser = argparse.ArgumentParser(description="Ultimux - tmux wrapper")
+parser = argparse.ArgumentParser(description="Ultimux tmux wrapper")
 # show server info
 parser.add_argument("-s", "--session", help="select session", required=False)
 
