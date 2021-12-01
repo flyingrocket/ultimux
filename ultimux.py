@@ -26,25 +26,14 @@ default_browse_dirs = f"/etc/{appname}/conf.d/,{homedir}/.{appname}/conf.d/"
 # Arguments
 # -----------------------------------------------
 parser = argparse.ArgumentParser(description="Ultimux tmux wrapper...")
-# show server info
-parser.add_argument("-s", "--session", help="select session", required=False)
-
-# synchronize
-parser.add_argument(
-    "--sync", help="synchronize panes", required=False, action="store_true"
-)
-
-# tiled
-parser.add_argument(
-    "--tiled", help="spread panes evenly", required=False, action="store_true"
-)
 
 # use config
-group = parser.add_mutually_exclusive_group(required=True)
-group.add_argument("-c", "--config-file", help="config yaml file", required=False)
+group0 = parser.add_mutually_exclusive_group(required=True)
+
+group0.add_argument("-c", "--config-file", help="config (yaml) file", required=False)
 
 # browse configuration files
-group.add_argument(
+group0.add_argument(
     "-b",
     "--browse",
     help=f"browse mode. defaults to browsing in dirs {default_browse_dirs}",
@@ -61,9 +50,21 @@ parser.add_argument(
     required=False,
 )
 
+group1 = parser.add_mutually_exclusive_group("session options")
 # list sessions
-parser.add_argument(
-    "-l", "--list", help="list sessions", required=False, action="store_true"
+group1.add_argument("--list", help="list sessions", required=False, action="store_true")
+
+group1.add_argument("--session", help="select session", required=False)
+
+group2 = parser.add_argument_group("tmux options")
+# synchronize
+group2.add_argument(
+    "--sync", help="synchronize panes", required=False, action="store_true"
+)
+
+# tiled
+group2.add_argument(
+    "--tiled", help="spread panes evenly", required=False, action="store_true"
 )
 
 # interactive mode
@@ -86,9 +87,9 @@ args = parser.parse_args()
 # -----------------------------------------------
 # Get config file
 # -----------------------------------------------
-config_file = args.config_file
-
 if args.config_file:
+    config_file = os.path.abspath(args.config_file)
+
     if re.match("^~\/", config_file):
         file_path = os.path.abspath(config_file.replace("~", homedir))
     elif re.match("^\.\/", config_file) or re.match("^\/", config_file):
