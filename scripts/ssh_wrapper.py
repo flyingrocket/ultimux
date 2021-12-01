@@ -15,18 +15,43 @@ import yaml
 # -----------------------------------------------
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
-
-generic_session_name = "tmux_ssh_wrapper"
-homedir = os.path.abspath(os.getenv("HOME"))
 script_user = getpass.getuser()
+
+appname = "ultimux"
+homedir = os.path.abspath(os.getenv("HOME"))
+default_browse_dirs = f"{homedir}/.{appname}/servers.d/"
+default_browse_dirs = f"/etc/{appname}/servers.d/,{homedir}/.{appname}/servers.d/"
+
 cache_base_dir = f"/tmp/{script_user}"
+generic_session_name = "tmux_ssh_wrapper"
 
 # -----------------------------------------------
 # Arguments
 # -----------------------------------------------
 parser = argparse.ArgumentParser(description="Ultimux ssh wrapper...")
 
-parser.add_argument("-c", "--config-file", help="servers (txt) file", required=True)
+# use config
+group0 = parser.add_mutually_exclusive_group(required=True)
+
+group0.add_argument("-c", "--config-file", help="config (txt) file", required=False)
+
+# browse configuration files
+group0.add_argument(
+    "-b",
+    "--browse",
+    help=f"browse mode. defaults to browsing in dirs {default_browse_dirs}",
+    default=False,
+    required=False,
+    action="store_true",
+)
+
+# browse configuration files
+parser.add_argument(
+    "--browse-dirs",
+    help=f"browse dir(s) - seperated by comma - for available config files. defaults to {default_browse_dirs}",
+    default=default_browse_dirs,
+    required=False,
+)
 
 parser.add_argument("--shell", help="remote command to run", required=False)
 
@@ -88,10 +113,46 @@ def is_valid_hostname(hostname):
 # -----------------------------------------------
 # Get server file
 # -----------------------------------------------
-if not args.config_file:
-    sys.exit()
+if args.config_file:
+    server_file = os.path.abspath(args.config_file)
 
-server_file = os.path.abspath(args.config_file)
+elif args.browse:
+    # search paths
+
+    config_dirs_found = []
+
+    for path in args.browse_dirs.split(","):
+        if os.path.exists(path):
+            config_dirs_found.append(os.path.abspath(path))
+        else:
+            # only fail if specific paths are given
+            if not args.browse_dirs == default_browse_dirs:
+                sys.exit(f"Config dir {path} not found!")
+
+    print(f"Browse '{args.browse_dirs}' directories...")
+
+    if not len(config_dirs_found):
+        sys.exit(f"No config dirs found.")
+
+    config_files = []
+    for path in config_dirs_found:
+        path = path.rstrip("/")
+        config_files += glob.glob(f"{path}/*.txt")
+
+    if not len(config_files):
+        sys.exit(f"No config files found!")
+
+    questions = [
+        inquirer.List(
+            "select_path",
+            message=f"Select config file:",
+            choices=config_files,
+        ),
+    ]
+    answers = inquirer.prompt(questions)
+    server_file = answers["select_path"]
+else:
+    sys.exit()
 
 if not re.match("^.*txt$", server_file):
     sys.exit("Server file must be a txt file!")
