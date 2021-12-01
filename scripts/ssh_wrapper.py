@@ -14,6 +14,7 @@ import yaml
 # Variables
 # -----------------------------------------------
 abspath = os.path.abspath(__file__)
+abspath = os.path.realpath(__file__)
 dname = os.path.dirname(abspath)
 script_user = getpass.getuser()
 
