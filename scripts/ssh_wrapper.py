@@ -233,7 +233,9 @@ if args.debug:
     print(config)
     sys.exit()
 
-ultimux_conffile = f"/tmp/{script_user}/{generic_session_name}.yml"
+# create cache base dir
+os.system(f'mkdir -p {cache_base_dir}')
+ultimux_conffile = f"{cache_base_dir}/{generic_session_name}.yml"
 
 f = open(ultimux_conffile, "w")
 f.write(config)
