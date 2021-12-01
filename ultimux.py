@@ -50,11 +50,11 @@ parser.add_argument(
     required=False,
 )
 
-group1 = parser.add_mutually_exclusive_group("session options")
+group1 = parser.add_mutually_exclusive_group()
 # list sessions
 group1.add_argument("--list", help="list sessions", required=False, action="store_true")
 
-group1.add_argument("--session", help="select session", required=False)
+group1.add_argument("-s", "--session", help="select session", required=False)
 
 group2 = parser.add_argument_group("tmux options")
 # synchronize
