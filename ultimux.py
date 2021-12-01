@@ -25,7 +25,7 @@ default_browse_dirs = f"/etc/{appname}/conf.d/,{homedir}/.{appname}/conf.d/"
 # -----------------------------------------------
 # Arguments
 # -----------------------------------------------
-parser = argparse.ArgumentParser(description="Ultimux tmux wrapper")
+parser = argparse.ArgumentParser(description="Ultimux tmux wrapper...")
 # show server info
 parser.add_argument("-s", "--session", help="select session", required=False)
 
@@ -111,7 +111,7 @@ elif args.browse:
     print(f"Browse '{args.browse_dirs}' directories...")
 
     if not len(config_dirs_found):
-        sys.exit(f"No config dirs found. Search path(s): {args.browse_dirs}")
+        sys.exit(f"No config dirs found.")
 
     config_files = []
     for path in config_dirs_found:
