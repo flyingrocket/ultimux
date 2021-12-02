@@ -2,6 +2,7 @@
 
 import argparse
 import glob
+import importlib
 import inquirer
 import os
 import re
@@ -14,13 +15,22 @@ from lib.ultimux import Ultimux
 # -----------------------------------------------
 # Variables
 # -----------------------------------------------
-abspath = os.path.abspath(__file__)
+abspath = os.path.realpath(__file__)
 dname = os.path.dirname(abspath)
 
 appname = "ultimux"
 homedir = os.path.abspath(os.getenv("HOME"))
 default_browse_dirs = f"{homedir}/.{appname}/conf.d/"
 default_browse_dirs = f"/etc/{appname}/conf.d/,{homedir}/.{appname}/conf.d/"
+
+# -----------------------------------------------
+# Include functions
+# -----------------------------------------------
+import importlib.util
+
+spec = importlib.util.spec_from_file_location("wrapper.py", f"{dname}/lib/wrapper.py")
+wrapper = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(wrapper)
 
 # -----------------------------------------------
 # Arguments
@@ -87,52 +97,8 @@ args = parser.parse_args()
 # -----------------------------------------------
 # Get config file
 # -----------------------------------------------
-if args.config_file:
-    config_file = os.path.abspath(args.config_file)
 
-    if re.match("^~\/", config_file):
-        file_path = os.path.abspath(config_file.replace("~", homedir))
-    elif re.match("^\.\/", config_file) or re.match("^\/", config_file):
-        file_path = os.path.abspath(config_file)
-    else:
-        file_path = os.path.abspath("./" + config_file)
-elif args.browse:
-    # search paths
-
-    config_dirs_found = []
-
-    for path in args.browse_dirs.split(","):
-        if os.path.exists(path):
-            config_dirs_found.append(os.path.abspath(path))
-        else:
-            # only fail if specific paths are given
-            if not args.browse_dirs == default_browse_dirs:
-                sys.exit(f"Config dir {path} not found!")
-
-    print(f"Browse '{args.browse_dirs}' directories...")
-
-    if not len(config_dirs_found):
-        sys.exit(f"No config dirs found.")
-
-    config_files = []
-    for path in config_dirs_found:
-        path = path.rstrip("/")
-        config_files += glob.glob(f"{path}/*.yml")
-
-    if not len(config_files):
-        sys.exit(f"No config files found!")
-
-    questions = [
-        inquirer.List(
-            "select_path",
-            message=f"Select config file:",
-            choices=config_files,
-        ),
-    ]
-    answers = inquirer.prompt(questions)
-    file_path = answers["select_path"]
-else:
-    sys.exit()
+file_path = wrapper.get_config_file(args, default_browse_dirs)
 
 if not os.path.exists(file_path):
     sys.exit(f'Config file "{file_path}" not found!')
@@ -140,17 +106,8 @@ if not os.path.exists(file_path):
 # -----------------------------------------------
 # Read config file
 # -----------------------------------------------
-# read the yaml file
-with open(file_path) as file:
 
-    if re.search(".+\.ya?ml$", file_path):
-        try:
-            yaml_config = yaml.load(file, Loader=yaml.SafeLoader)
-        except yaml.YAMLError as e:
-            print(e)
-            sys.exit("Exception in parsing yaml file " + file_path + "!")
-    else:
-        sys.exit("{} file not supported!".format(file_path))
+yaml_config = wrapper.get_yaml_config(file_path)
 
 # -----------------------------------------------
 # List sessions
@@ -165,24 +122,13 @@ if args.list:
 if args.session:
     session_name = args.session
 else:
-    questions = [
-        inquirer.List(
-            "select_session",
-            message=f"Select session:",
-            choices=yaml_config.keys(),
-        ),
-    ]
-    answers = inquirer.prompt(questions)
-    session_name = answers["select_session"]
-
-if not session_name in yaml_config.keys():
-    print("Session not found!")
-    sys.exit()
+    session_name = wrapper.get_section(yaml_config, "session")
 
 # -----------------------------------------------
 # Instantiate ultimux class
 # -----------------------------------------------
 session_config = yaml_config[session_name]
+
 utmx = Ultimux(session_config, session_name)
 
 if args.interactive:

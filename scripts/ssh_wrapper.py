@@ -5,6 +5,8 @@ import getpass
 import glob
 import inquirer
 from jinja2 import Template
+
+# from natsort import natsorted
 import os
 import re
 import sys
@@ -34,7 +36,7 @@ parser = argparse.ArgumentParser(description="Ultimux ssh wrapper...")
 # use config
 group0 = parser.add_mutually_exclusive_group(required=True)
 
-group0.add_argument("-c", "--config-file", help="config (txt) file", required=False)
+group0.add_argument("-c", "--config-file", help="config (yaml) file", required=False)
 
 # browse configuration files
 group0.add_argument(
@@ -53,6 +55,12 @@ parser.add_argument(
     default=default_browse_dirs,
     required=False,
 )
+
+group1 = parser.add_mutually_exclusive_group()
+# list sessions
+group1.add_argument("--list", help="list clusters", required=False, action="store_true")
+
+group1.add_argument("-s", "--select-cluster", help="select cluster", required=False)
 
 parser.add_argument("--shell", help="remote command to run", required=False)
 
@@ -112,63 +120,54 @@ def is_valid_hostname(hostname):
 
 
 # -----------------------------------------------
-# Get server file
+# Include functions
 # -----------------------------------------------
-if args.config_file:
-    server_file = os.path.abspath(args.config_file)
+import importlib.util
 
-elif args.browse:
-    # search paths
+spec = importlib.util.spec_from_file_location(
+    "wrapper.py", f"{dname}/../lib/wrapper.py"
+)
+wrapper = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(wrapper)
 
-    config_dirs_found = []
+# -----------------------------------------------
+# Get config file
+# -----------------------------------------------
+file_path = wrapper.get_config_file(args, default_browse_dirs)
 
-    for path in args.browse_dirs.split(","):
-        if os.path.exists(path):
-            config_dirs_found.append(os.path.abspath(path))
-        else:
-            # only fail if specific paths are given
-            if not args.browse_dirs == default_browse_dirs:
-                sys.exit(f"Config dir {path} not found!")
+if not os.path.exists(file_path):
+    sys.exit(f'Config file "{file_path}" not found!')
 
-    print(f"Browse '{args.browse_dirs}' directories...")
+# -----------------------------------------------
+# Read config file
+# -----------------------------------------------
+yaml_config = wrapper.get_yaml_config(file_path)
 
-    if not len(config_dirs_found):
-        sys.exit(f"No config dirs found.")
-
-    config_files = []
-    for path in config_dirs_found:
-        path = path.rstrip("/")
-        config_files += glob.glob(f"{path}/*.txt")
-
-    if not len(config_files):
-        sys.exit(f"No config files found!")
-
-    questions = [
-        inquirer.List(
-            "select_path",
-            message=f"Select config file:",
-            choices=config_files,
-        ),
-    ]
-    answers = inquirer.prompt(questions)
-    server_file = answers["select_path"]
-else:
+# -----------------------------------------------
+# List sessions
+# -----------------------------------------------
+if args.list:
+    print("\n".join(list(yaml_config.keys())))
     sys.exit()
 
-if not re.match("^.*txt$", server_file):
-    sys.exit("Server file must be a txt file!")
+# -----------------------------------------------
+# Get cluster name
+# -----------------------------------------------
+if args.select_cluster:
+    cluster_name = args.select_cluster
+else:
+    cluster_name = wrapper.get_section(yaml_config, "cluster")
 
-server_fh = open(server_file, "r")
-hostname_list = server_fh.read().split("\n")
+# -----------------------------------------------
+# Select hostnames
+# -----------------------------------------------
+hostname_list = yaml_config[cluster_name]
 hostname_list = list(filter(None, hostname_list))
+hostname_list = wrapper.natural_sort(hostname_list)
 for hostname in hostname_list:
     hostname = hostname.rstrip(" ")
     if not is_valid_hostname(hostname) or hostname[-1] == ".":
         sys.exit(f"Illegal hostname: '{hostname}'")
-    # if re.search(" ", line):
-    #     sys.exit(f"Illegal hostname. May not contain spaces: '{line}'")
-    # print(line)
-server_fh.close()
 
 questions = [
     inquirer.Checkbox(
@@ -235,7 +234,7 @@ if args.debug:
     sys.exit()
 
 # create cache base dir
-os.system(f'mkdir -p {cache_base_dir}')
+os.system(f"mkdir -p {cache_base_dir}")
 ultimux_conffile = f"{cache_base_dir}/{generic_session_name}.yml"
 
 f = open(ultimux_conffile, "w")
