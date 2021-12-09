@@ -66,6 +66,15 @@ group1.add_argument("--list", help="list sessions", required=False, action="stor
 
 group1.add_argument("-s", "--session", help="select session", required=False)
 
+parser.add_argument(
+    "-u",
+    "--unique",
+    help="create a session without a timestamp",
+    required=False,
+    default=False,
+    action="store_true",
+)
+
 group2 = parser.add_argument_group("tmux options")
 # synchronize
 group2.add_argument(
@@ -129,7 +138,7 @@ else:
 # -----------------------------------------------
 session_config = yaml_config[session_name]
 
-utmx = Ultimux(session_config, session_name)
+utmx = Ultimux(session_config, session_name, args.unique)
 
 if args.interactive:
     utmx.set_interactive(True)

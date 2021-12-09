@@ -32,7 +32,9 @@ class Ultimux:
 
     validated_destinations = []
 
-    def __init__(self, session_config, session_name=""):
+    def __init__(self, session_config, session_name="", unique=False):
+
+        self.session_config = session_config
 
         #########################################
         # Check if tmux is installed
@@ -45,16 +47,16 @@ class Ultimux:
             print("Tmux is not installed...")
 
         #########################################
-        # Set session_config
+        # Set session name
         #########################################
-        datestamp = "{:%Y-%m-%d_%H%M%S}".format(datetime.datetime.now())
-
-        self.session_config = session_config
-
-        if not session_name == "":
-            self.session_name = session_name + "_" + datestamp
+        if session_name == "":
+            self.session_name = self.app_name
         else:
-            self.session_name = self.app_name + "_" + datestamp
+            self.session_name = session_name
+
+        if not unique:
+            datestamp = "{:%Y-%m-%d_%H%M%S}".format(datetime.datetime.now())
+            self.session_name += "_" + datestamp
 
         # validate session name
         if re.search("(\.|\:|\ )+", self.session_name):
