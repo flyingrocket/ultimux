@@ -10,14 +10,8 @@ import yaml
 
 def get_config_file(args, default_browse_dirs):
     if args.config_file:
-        config_file = os.path.abspath(args.config_file)
+        file_path = os.path.abspath(args.config_file)
 
-        if re.match("^~\/", config_file):
-            file_path = os.path.abspath(config_file.replace("~", homedir))
-        elif re.match("^\.\/", config_file) or re.match("^\/", config_file):
-            file_path = os.path.abspath(config_file)
-        else:
-            file_path = os.path.abspath("./" + config_file)
     elif args.browse:
         # search paths
 
