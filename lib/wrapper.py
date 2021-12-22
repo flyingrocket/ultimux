@@ -51,6 +51,8 @@ def get_config_file(args, default_browse_dirs):
         if not len(config_files):
             sys.exit(f"No config files found!")
 
+        config_files.sort()
+
         questions = [
             inquirer.List(
                 "select_path",
