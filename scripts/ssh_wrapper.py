@@ -106,7 +106,6 @@ parser.add_argument(
 )
 
 args = parser.parse_args()
-
 # -----------------------------------------------
 # Functions
 # -----------------------------------------------
@@ -161,34 +160,52 @@ else:
 # -----------------------------------------------
 # Select hostnames
 # -----------------------------------------------
-hostname_list = yaml_config[cluster_name]
-hostname_list = list(filter(None, hostname_list))
-hostname_list = wrapper.natural_sort(hostname_list)
-for hostname in hostname_list:
-    hostname = hostname.rstrip(" ")
+
+choices_list = []
+
+for item in yaml_config[cluster_name]:
+
+    description = ""
+
+    if isinstance(item, dict):
+        hostname = item["hostname"]
+        description = item["description"]
+    else:
+        hostname = item.rstrip(" ")
     if not is_valid_hostname(hostname) or hostname[-1] == ".":
         sys.exit(f"Illegal hostname: '{hostname}'")
+
+    choices_list.append(f"{hostname}; {description}")
+
+# remove empty
+choices_list = list(filter(None, choices_list))
+# sort
+choices_list = wrapper.natural_sort(choices_list)
 
 questions = [
     inquirer.Checkbox(
         "selected",
         message=f"Select server(s). Use spacebar",
-        choices=hostname_list,
+        choices=choices_list,
     ),
 ]
 
 answers = inquirer.prompt(questions)
 
-selected_hostnames = []
+selected_hostnames_tmp = []
 
 # select multiple
 if isinstance(answers["selected"], list):
-    selected_hostnames = answers["selected"]
+    selected_hostnames_tmp = answers["selected"]
 else:
-    selected_hostnames.append(answers["selected"])
+    selected_hostnames_tmp.append(answers["selected"])
 
-if not len(selected_hostnames):
+if not len(selected_hostnames_tmp):
     sys.exit("Select a host!")
+
+selected_hostnames = []
+for entry in selected_hostnames_tmp:
+    selected_hostnames.append(entry.split(";")[0].strip())
 
 # -----------------------------------------------
 # Create template
