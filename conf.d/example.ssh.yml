@@ -37,7 +37,6 @@ minimal_layout:
   synchronize: true # synchronize panes
   focus: '0.1' # focus
   interactive: true
-  synchronize: true # synchronize panes
 commands_escape:
   layout: even-horizontal
   ssh:
