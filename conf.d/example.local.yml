@@ -1,11 +1,11 @@
 ---
 basic_layout:
   focus: '0.0' # focus
-  panes: 
+  panes:
   - shell: 'ls' # pane at the top, shell directive is optional
   - ['w', 'whoami'] # two panes in horizontal split (default)
   - ['w', { shell: 'whoami', split: '-v'}] # two panes in vertical split
-  - 'ssh juggernaut; htop' # two consecutive commands 
+  - 'ssh juggernaut; htop' # two consecutive commands
   windows:
   - name: win10
   - name: win12
@@ -13,7 +13,7 @@ basic_layout:
     - shell: 'htop' # override default commands
 synchronize_layout:
   synchronize: true
-  panes: 
+  panes:
   - '' # pane at the top
   - ['', ''] # two panes next to eachother
   windows:

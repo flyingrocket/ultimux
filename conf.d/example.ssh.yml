@@ -1,22 +1,22 @@
 ---
 full_layout:
-  ssh: 
+  ssh:
     user: 'root'
     server: 'juggernaut'
     login: false
-  panes: 
+  panes:
   - shell: 'echo 1' # pane at the top
-    ssh: 
+    ssh:
       server: 'iceman'
       login: true
   - shell: ['echo 2', 'echo 3'] # two panes next to eachother
-    ssh: 
+    ssh:
       server: 'cyclops'
-  - shell: 'echo 4'  
+  - shell: 'echo 4'
   windows:
   - name: 'window 1'
   - name: 'window 2'
-    ssh: 
+    ssh:
       server: 'northstar'
       user: brdooms
       login: true
@@ -27,12 +27,12 @@ full_layout:
     panes:
     - shell: 'sudo tail -f /var/log/auth.log'
 minimal_layout:
-  ssh: 
+  ssh:
     login: true
-  panes: 
-  - ssh: 
+  panes:
+  - ssh:
       server: 'iceman'
-  - ssh: 
+  - ssh:
       server: 'northstar'
   synchronize: true # synchronize panes
   focus: '0.1' # focus
@@ -47,7 +47,7 @@ commands_escape:
     ssh:
       server: 'juggernaut'
 remote_tmux:
-  ssh: 
+  ssh:
     server: juggernaut
     login: true
   panes:
