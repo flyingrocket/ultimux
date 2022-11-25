@@ -137,6 +137,8 @@ file_path = wrapper.get_config_file(args, default_browse_dirs)
 if not os.path.exists(file_path):
     sys.exit(f'Config file "{file_path}" not found!')
 
+print(f"Use {file_path}...")
+
 # -----------------------------------------------
 # Read config file
 # -----------------------------------------------

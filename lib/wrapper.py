@@ -53,15 +53,18 @@ def get_config_file(args, default_browse_dirs):
 
         config_files.sort()
 
-        questions = [
-            inquirer.List(
-                "select_path",
-                message=f"Select config file:",
-                choices=config_files,
-            ),
-        ]
-        answers = inquirer.prompt(questions)
-        file_path = answers["select_path"]
+        if len(config_files) == 1:
+            file_path = config_files[0]
+        else:
+            questions = [
+                inquirer.List(
+                    "select_path",
+                    message=f"Select config file:",
+                    choices=config_files,
+                ),
+            ]
+            answers = inquirer.prompt(questions)
+            file_path = answers["select_path"]
     else:
         sys.exit()
 
