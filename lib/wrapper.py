@@ -87,22 +87,23 @@ def get_yaml_config(file_path):
     return yaml_config
 
 
-def get_section(yaml_config, section_name="session"):
+def get_sections(yaml_config, section_name="session"):
     questions = [
-        inquirer.List(
+        inquirer.Checkbox(
             "selected",
             message=f"Select {section_name}:",
             choices=yaml_config.keys(),
         ),
     ]
     answers = inquirer.prompt(questions)
-    section_name = answers["selected"]
+    sections = answers["selected"]
 
-    if not section_name in yaml_config.keys():
-        print(f"{section_name} not found!")
-        sys.exit()
+    for section_name in sections:
+        if not section_name in yaml_config.keys():
+            print(f"{section_name} not found!")
+            sys.exit()
 
-    return section_name
+    return sections
 
 
 def natural_sort(l):

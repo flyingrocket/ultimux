@@ -155,29 +155,29 @@ if args.list:
 # Get cluster name
 # -----------------------------------------------
 if args.select_cluster:
-    cluster_name = args.select_cluster
+    cluster_names = [args.select_cluster]
 else:
-    cluster_name = wrapper.get_section(yaml_config, "cluster")
+    cluster_names = wrapper.get_sections(yaml_config, "cluster")
 
 # -----------------------------------------------
 # Select hostnames
 # -----------------------------------------------
 
 choices_list = []
+for cluster_name in cluster_names:
+    for item in yaml_config[cluster_name]:
 
-for item in yaml_config[cluster_name]:
+        description = ""
 
-    description = ""
+        if isinstance(item, dict):
+            hostname = item["hostname"]
+            description = item["description"]
+        else:
+            hostname = item.rstrip(" ")
+        if not is_valid_hostname(hostname) or hostname[-1] == ".":
+            sys.exit(f"Illegal hostname: '{hostname}'")
 
-    if isinstance(item, dict):
-        hostname = item["hostname"]
-        description = item["description"]
-    else:
-        hostname = item.rstrip(" ")
-    if not is_valid_hostname(hostname) or hostname[-1] == ".":
-        sys.exit(f"Illegal hostname: '{hostname}'")
-
-    choices_list.append(f"{hostname}; {description}")
+        choices_list.append(f"{hostname}; {description}")
 
 # remove empty
 choices_list = list(filter(None, choices_list))
@@ -204,6 +204,9 @@ else:
 
 if not len(selected_hostnames_tmp):
     sys.exit("Select a host!")
+
+if len(selected_hostnames_tmp) > 9:
+    sys.exit("Max number is 9!")
 
 selected_hostnames = []
 for entry in selected_hostnames_tmp:
