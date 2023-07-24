@@ -133,7 +133,7 @@ if args.list:
 if args.session:
     session_name = args.session
 else:
-    session_name = wrapper.get_section(yaml_config, "session")
+    session_name = wrapper.get_sections(yaml_config, "session")[0]
 
 # -----------------------------------------------
 # Instantiate ultimux class
