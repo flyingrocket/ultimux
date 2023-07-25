@@ -16,7 +16,7 @@ class Ultimux:
 
     app_name = "ultimux"
 
-    version = "1.0"
+    version = "1.1"
 
     #########################################
     # Dynamic properties
@@ -120,7 +120,7 @@ class Ultimux:
 
         self.sync = sync
 
-    def create(self):
+    def create(self, options={}):
 
         session_config = self.session_config
 
@@ -221,21 +221,33 @@ class Ultimux:
                     )
 
                 if type(pane) == dict:
-                    if "shell" not in pane.keys():
-                        if window.get("shell"):
-                            pane["shell"] = self.parse_shell(window.get("shell"))
-                        elif session_config.get("shell"):
-                            pane["shell"] = self.parse_shell(
-                                session_config.get("shell")
-                            )
-                        else:
-                            pane["shell"] = [""]
+                    for config_type in ["dir", "shell"]:
+                        if config_type not in pane.keys():
+                            if config_type in options:
+                                pane[config_type] = options[config_type]
+                            elif window.get(config_type):
+                                pane[config_type] = self.parse_shell(
+                                    window.get(config_type)
+                                )
+                            elif session_config.get(config_type):
+                                pane[config_type] = self.parse_shell(
+                                    session_config.get(config_type)
+                                )
+                            else:
+                                pane[config_type] = [""]
                 else:
                     yml_cmds = self.parse_shell(pane)
                     pane = {}
                     pane["shell"] = yml_cmds
 
-                cmds = self.parse_shell(pane["shell"])
+                cmds = []
+
+                shell_cmds = self.parse_shell(pane["shell"])
+
+                if pane["dir"] != [""]:
+                    cmds = [f"cd {pane['dir']}; {shell_cmds[0]}"]
+                else:
+                    cmds = self.parse_shell(pane["shell"])
 
                 if type(cmds) != list:
                     self.fail("Could not parse cmds, not a list!")
@@ -323,8 +335,6 @@ class Ultimux:
         )
 
     def parse_shell(self, shell_command=""):
-
-        formatted = {}
 
         # if only a command or list is specified
         if shell_command == None:
