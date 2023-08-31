@@ -1,6 +1,6 @@
 __pycache__
 __init__.py
-*log
-test*
-*swp
 .vscode
+*log
+*swp
+ignored.*
