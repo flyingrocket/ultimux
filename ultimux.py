@@ -1,47 +1,125 @@
 #! /usr/bin/env python3
 
+import argparse
+import datetime
 import os
 import sys
 
 # -----------------------------------------------
 # Include functions
 # -----------------------------------------------
-from _helpers import *
+from _app import *
 from _ultimux import *
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+script_time = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
 
 # -----------------------------------------------
 # Arguments
 # -----------------------------------------------
-config_dirs = f"/etc/{appname}/conf.d/,{homedir}/.{appname}/conf.d/"
-args = get_argparse(config_dirs=config_dirs)
+parser = argparse.ArgumentParser(description="Ultimux, a tmux wrapper.")
+
+# interactive mode
+parser.add_argument(
+    "-i",
+    "--interactive",
+    help="interactive mode",
+    required=False,
+    default=False,
+    action="store_true",
+)
+
+# debug
+parser.add_argument(
+    "--debug",
+    help="debug mode",
+    required=False,
+    default=False,
+    action="store_true",
+)
+
+parser.add_argument(
+    "-v",
+    "--verbose",
+    help="Set to verbose mode",
+    required=False,
+    default=False,
+    action="store_true",
+)
 
 # -----------------------------------------------
-# Get config file
+# Subparser
 # -----------------------------------------------
-config_file_path = get_config_file(args)
-
-if not os.path.exists(config_file_path):
-    sys.exit(f"Config file '{config_file_path}' not found!")
-
-print(f"Use '{config_file_path}'...")
+subparsers = parser.add_subparsers(dest="subcommand", required=True)
 
 # -----------------------------------------------
-# Read config file
+# Run with config
 # -----------------------------------------------
-yaml_config = get_yaml_config(config_file_path)
+rparser = subparsers.add_parser("run")
+# use config
+rparser.add_argument(
+    "-c",
+    "--config-file",
+    help="config (yaml) file",
+    required=False,
+    default=False,
+)
+rparser.add_argument("-s", "--session", help="select session", required=False)
 
 # -----------------------------------------------
-# Get session name
+# Generate with template
 # -----------------------------------------------
-if not args.session:
-    args.session = select_sections(yaml_config, "session")[0]
+gparser = subparsers.add_parser("gen")
+gparser.add_argument("--dir", help="remote dir to cd in", required=False)
+gparser.add_argument(
+    "--flatten",
+    "-f",
+    help="do not use server groups",
+    required=False,
+    action="store_true",
+)
+gparser.add_argument("--shell", help="remote command to run", required=False)
+
+# use config
+gparser.add_argument(
+    "-c",
+    "--config-file",
+    help="config (yaml) file",
+    required=False,
+    default=False,
+)
+
+group2 = gparser.add_argument_group("tmux options")
+# synchronize
+group2.add_argument(
+    "--sync", help="synchronize panes", required=False, action="store_true"
+)
+
+# tiled
+group2.add_argument(
+    "--tiled", help="spread panes evenly", required=False, action="store_true"
+)
+
+args = parser.parse_args()
+
+# -----------------------------------------------
+# Initiate app
+# -----------------------------------------------
+if args.subcommand == "run":
+    app = RunApp(args)
+    session_name = args.session
+elif args.subcommand == "gen":
+    app = GenApp(args)
+    session_name = f"utmx_gen_{script_time}"
+else:
+    sys.exit("Illegal subcommand!")
 
 # -----------------------------------------------
 # Instantiate ultimux class
 # -----------------------------------------------
-session_config = yaml_config[args.session]
+session_config = app.get_session_config(session_name)
 
-utmx = Ultimux(session_config, args.session, args.unique)
+utmx = Ultimux(session_config, f"utmx_{args.subcommand}", True)
 
 if args.interactive:
     utmx.set_interactive(True)
@@ -57,7 +135,8 @@ if args.tiled:
 
 options = {}
 for config_type in ["shell", "dir"]:
-    if getattr(args, config_type):
+
+    if hasattr(args, config_type):
         options[config_type] = getattr(args, config_type)
 
 utmx.create(options)

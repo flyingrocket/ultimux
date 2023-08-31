@@ -1,0 +1,25 @@
+---
+# Ultimux generated config file
+# Created On {{ timestamp }}
+# Created By {{ created_by }}
+
+{{ session_name }}:
+{%- if tiled %}
+  layout: 'tiled'
+{%- endif %}
+{%- if synchronize %}
+  synchronize: true
+{%- else %}
+  synchronize: false
+{%- endif %}
+  panes:
+{%- for hostname in hostnames %}
+  - ssh:
+      server: {{ hostname }}
+{%- if shell_cmd %}
+      shell: '{{ shell_cmd -}}'
+{% endif %}
+{%- if directory %}
+      dir: '{{ directory -}}'
+{% endif %}
+{% endfor -%}

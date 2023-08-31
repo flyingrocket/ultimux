@@ -1,0 +1,3 @@
+config_dirs:
+  - /etc/ultimux/conf.d/
+  - ~/.ultimux/conf.d/

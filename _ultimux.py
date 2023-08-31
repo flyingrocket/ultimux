@@ -14,9 +14,9 @@ class Ultimux:
 
     session_name = ""
 
-    app_name = "ultimux"
+    app_name = "utmx"
 
-    version = "1.1"
+    version = "2.0"
 
     #########################################
     # Dynamic properties
@@ -32,7 +32,7 @@ class Ultimux:
 
     validated_destinations = []
 
-    def __init__(self, session_config, session_name="", unique=False):
+    def __init__(self, session_config, session_name="", add_timestamp=False):
 
         self.session_config = session_config
 
@@ -49,13 +49,14 @@ class Ultimux:
         #########################################
         # Set session name
         #########################################
+        datestamp = "{:%Y-%m-%d_%H%M%S}".format(datetime.datetime.now())
+
         if session_name == "":
             self.session_name = self.app_name
         else:
             self.session_name = session_name
 
-        if not unique:
-            datestamp = "{:%Y-%m-%d_%H%M%S}".format(datetime.datetime.now())
+        if add_timestamp:
             self.session_name += "_" + datestamp
 
         # validate session name
