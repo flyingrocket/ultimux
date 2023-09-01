@@ -443,7 +443,11 @@ class Ultimux:
         tcommands = command.split(";")
 
         for tcommand in tcommands:
-            tcommand = tcommand.strip(" ")
+            tcommand = tcommand.strip()
+
+            # no empty commands allowed
+            if not tcommand:
+                continue
 
             if self.debug:
                 tcommand = "# " + tcommand

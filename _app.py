@@ -218,6 +218,8 @@ class GenApp(App):
         # -----------------------------------------------
         # Select dir
         # -----------------------------------------------
+        directory = False
+
         if args.dir:
             directory = args.dir
 
