@@ -245,7 +245,7 @@ class Ultimux:
 
                 shell_cmds = self.parse_shell(pane["shell"])
 
-                if pane["dir"] != [""]:
+                if pane["dir"] and pane["dir"] != [""]:
                     cmds = [f"cd {pane['dir']}; {shell_cmds[0]}"]
                 else:
                     cmds = self.parse_shell(pane["shell"])

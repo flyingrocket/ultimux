@@ -4,13 +4,15 @@ import datetime
 import getpass
 import glob
 import inquirer
+import jinja2
 import os
 import re
 import sys
 import tempfile
 import yaml
 
-import jinja2
+from iterfzf import iterfzf
+from natsort import natsorted
 
 # -----------------------------------------------
 # Class
@@ -99,15 +101,12 @@ class App:
             if len(config_files) == 1:
                 file_path = config_files[0]
             else:
-                questions = [
-                    inquirer.List(
-                        "select_path",
-                        message=f"Select config file:",
-                        choices=config_files,
-                    ),
-                ]
-                answers = inquirer.prompt(questions)
-                file_path = answers["select_path"]
+                file_path = iterfzf(
+                    config_files,
+                    multi=False,
+                    exact=True,
+                    prompt="Select a config file:",
+                )
 
         if not os.path.exists(file_path):
             sys.exit(f"Config file '{file_path}' not found!")
@@ -131,26 +130,17 @@ class App:
 
     def select_sections(self, yaml_config, section_name="session", multi_select=True):
 
-        if multi_select:
-            questions = [
-                inquirer.Checkbox(
-                    "selected",
-                    message=f"Select {section_name}:",
-                    choices=yaml_config.keys(),
-                ),
-            ]
-            answers = inquirer.prompt(questions)
-            sections = answers["selected"]
-        else:
-            questions = [
-                inquirer.List(
-                    "selected",
-                    message=f"Select {section_name}:",
-                    choices=yaml_config.keys(),
-                ),
-            ]
-            answers = inquirer.prompt(questions)
-            sections = [answers["selected"]]
+        sections_available = yaml_config.keys()
+
+        sections = iterfzf(
+            sections_available,
+            multi=multi_select,
+            exact=True,
+            prompt="Select a section:",
+        )
+
+        if type(sections) == str:
+            sections = [sections]
 
         for section_name in sections:
             if not section_name in yaml_config.keys():
@@ -158,14 +148,6 @@ class App:
                 sys.exit()
 
         return sections
-
-    def natural_sort(self, l):
-
-        convert = lambda text: int(text) if text.isdigit() else text.lower()
-
-        alphanum_key = lambda key: [convert(c) for c in re.split("([0-9]+)", key)]
-
-        return sorted(l, key=alphanum_key)
 
     def is_valid_hostname(self, hostname):
         if len(hostname) > 255:
@@ -199,7 +181,8 @@ class GenApp(App):
 
                 if isinstance(item, dict):
                     hostname = item["hostname"]
-                    description = item["description"]
+                    if "description" in item:
+                        description = item["description"]
                 else:
                     hostname = item.rstrip(" ")
                 if not self.is_valid_hostname(hostname) or hostname[-1] == ".":
@@ -209,43 +192,36 @@ class GenApp(App):
 
         # remove empty
         choices_list = list(filter(None, choices_list))
+
         # sort
-        choices_list = self.natural_sort(choices_list)
+        choices_list = natsorted(choices_list)
 
-        questions = [
-            inquirer.Checkbox(
-                "selected",
-                message=f"Select server(s). Use spacebar",
-                choices=choices_list,
-            ),
-        ]
+        hostnames0 = iterfzf(
+            choices_list,
+            multi=True,
+            exact=True,
+            prompt="Select (multiple with tab/shift+tab) server(s):",
+        )
 
-        answers = inquirer.prompt(questions)
+        if type(hostnames0) == str:
+            hostnames0 = [hostnames0]
 
-        selected_hostnames_tmp = []
-
-        # select multiple
-        if isinstance(answers["selected"], list):
-            selected_hostnames_tmp = answers["selected"]
-        else:
-            selected_hostnames_tmp.append(answers["selected"])
-
-        if not len(selected_hostnames_tmp):
+        if not len(hostnames0):
             sys.exit("Select a host!")
 
-        if len(selected_hostnames_tmp) > 9:
+        if len(hostnames0) > 9:
             sys.exit("Max number is 9!")
 
-        selected_hostnames = []
-        for entry in selected_hostnames_tmp:
-            selected_hostnames.append(entry.split(";")[0].strip())
+        hostnames = []
+        for entry in hostnames0:
+            hostnames.append(entry.split(";")[0].strip())
 
         # -----------------------------------------------
         # Create template
         # -----------------------------------------------
         session_name
         data = {}
-        data["hostnames"] = selected_hostnames
+        data["hostnames"] = hostnames
         data["session_name"] = session_name
         data["created_by"] = self.run_username
         data["timestamp"] = self.script_time

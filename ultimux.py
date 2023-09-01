@@ -121,17 +121,10 @@ session_config = app.get_session_config(session_name)
 
 utmx = Ultimux(session_config, f"utmx_{args.subcommand}", True)
 
-if args.interactive:
-    utmx.set_interactive(True)
-
-if args.debug:
-    utmx.set_debug(True)
-
-if args.sync:
-    utmx.set_sync(True)
-
-if args.tiled:
-    utmx.set_tiled(True)
+for flag in ["debug", "interactive", "sync", "tiled"]:
+    if hasattr(args, flag) and getattr(args, flag):
+        func = getattr(utmx, f"set_{flag}")
+        func(getattr(args, flag))
 
 options = {}
 for config_type in ["shell", "dir"]:
