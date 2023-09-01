@@ -134,21 +134,21 @@ class Ultimux:
         # ---------------------------------------
         # Global options
         # ---------------------------------------
-        if session_config.get("interactive"):
+        if "interactive" in session_config:
             self.set_interactive(session_config.get("interactive"))
 
-        if session_config.get("focus"):
+        if "config" in session_config:
             self.set_focus(session_config.get("focus"))
 
         # ---------------------------------------
         # Create window if required
         # ---------------------------------------
         # check if window
-        if not session_config.get("windows"):
+        if not "windows" in session_config:
 
             window_config = {"name": "ultimux"}
 
-            if session_config.get("panes"):
+            if "panes" in session_config:
                 window_config["panes"] = session_config["panes"]
 
             session_config["windows"] = []

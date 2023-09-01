@@ -55,7 +55,8 @@ subparsers = parser.add_subparsers(dest="subcommand", required=True)
 # -----------------------------------------------
 # Run with config
 # -----------------------------------------------
-rparser = subparsers.add_parser("run")
+rparser = subparsers.add_parser("run", help="Run tmux session from config file")
+
 # use config
 rparser.add_argument(
     "-c",
@@ -69,7 +70,9 @@ rparser.add_argument("-s", "--session", help="select session", required=False)
 # -----------------------------------------------
 # Generate with template
 # -----------------------------------------------
-gparser = subparsers.add_parser("gen")
+gparser = subparsers.add_parser(
+    "gen", aliases=["generate"], help="Generate and run ad hoc configs for ssh"
+)
 
 # directory stuff
 group = gparser.add_mutually_exclusive_group()
