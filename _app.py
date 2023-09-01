@@ -3,7 +3,7 @@
 import datetime
 import getpass
 import glob
-import inquirer
+import globre
 import jinja2
 import os
 import re
@@ -22,12 +22,11 @@ class App:
 
         self.appname = "utmx"
         self.args = args
-        self.datestamp = "{:%Y-%m-%d_%H%M%S}".format(datetime.datetime.now())
         self.homedir = os.path.abspath(os.getenv("HOME"))
         self.run_username = getpass.getuser()
         self.script_dir = os.path.dirname(os.path.realpath(__file__))
         self.script_time = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
-        self.tmux_name = f"{self.appname}_{self.datestamp}"
+        self.tmux_name = f"{self.appname}_{self.script_time}"
 
         # get configuration for utmx app
         self.app_config = self.get_app_config_yaml()
@@ -139,7 +138,7 @@ class App:
             prompt="Select a section:",
         )
 
-        if type(sections) == str:
+        if not isinstance(sections, list):
             sections = [sections]
 
         for section_name in sections:
@@ -149,13 +148,13 @@ class App:
 
         return sections
 
-    def is_valid_hostname(self, hostname):
-        if len(hostname) > 255:
+    def is_valid_host(self, host):
+        if len(host) > 255:
             return False
-        if hostname[-1] == ".":
-            hostname = hostname[:-1]  # strip exactly one dot from the right, if present
+        if host[-1] == ".":
+            host = host[:-1]  # strip exactly one dot from the right, if present
         allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
-        return all(allowed.match(x) for x in hostname.split("."))
+        return all(allowed.match(x) for x in host.split("."))
 
 
 class GenApp(App):
@@ -171,7 +170,7 @@ class GenApp(App):
             server_groups = self.select_sections(yaml_config["groups"], "group")
 
         # -----------------------------------------------
-        # Select hostnames
+        # Select hosts
         # -----------------------------------------------
         choices_list = []
         for server_group in server_groups:
@@ -180,15 +179,15 @@ class GenApp(App):
                 description = ""
 
                 if isinstance(item, dict):
-                    hostname = item["hostname"]
+                    host = item["host"]
                     if "description" in item:
                         description = item["description"]
                 else:
-                    hostname = item.rstrip(" ")
-                if not self.is_valid_hostname(hostname) or hostname[-1] == ".":
-                    sys.exit(f"Illegal hostname: '{hostname}'")
+                    host = item.rstrip(" ")
+                if not self.is_valid_host(host) or host[-1] == ".":
+                    sys.exit(f"Illegal host: '{host}'")
 
-                choices_list.append(f"{hostname}; {description}")
+                choices_list.append(f"{host}; {description}")
 
         # remove empty
         choices_list = list(filter(None, choices_list))
@@ -196,40 +195,79 @@ class GenApp(App):
         # sort
         choices_list = natsorted(choices_list)
 
-        hostnames0 = iterfzf(
+        hosts0 = iterfzf(
             choices_list,
             multi=True,
             exact=True,
             prompt="Select (multiple with tab/shift+tab) server(s):",
         )
 
-        if type(hostnames0) == str:
-            hostnames0 = [hostnames0]
+        if not isinstance(hosts0, list):
+            hosts0 = [hosts0]
 
-        if not len(hostnames0):
+        if not len(hosts0):
             sys.exit("Select a host!")
 
-        if len(hostnames0) > 9:
+        if len(hosts0) > 9:
             sys.exit("Max number is 9!")
 
-        hostnames = []
-        for entry in hostnames0:
-            hostnames.append(entry.split(";")[0].strip())
+        hosts = []
+        for entry in hosts0:
+            hosts.append(entry.split(";")[0].strip())
+
+        # -----------------------------------------------
+        # Select dir
+        # -----------------------------------------------
+        if args.dir:
+            directory = args.dir
+
+        if args.select_dir:
+
+            sel_dirs = []
+
+            for host in hosts:
+
+                for group in yaml_config["groups"]:
+
+                    for item in yaml_config["groups"][group]:
+
+                        if isinstance(item, dict):
+
+                            if item["host"] != host:
+                                continue
+
+                        elif item != host:
+                            continue
+
+                        # if we got this for, the host is a match!
+
+                        # check for dir patterns
+                        for pattern in yaml_config["dirs"]:
+
+                            if globre.match(pattern, group):
+
+                                sel_dirs.extend(yaml_config["dirs"][pattern])
+
+            directory = iterfzf(
+                sel_dirs,
+                multi=False,
+                exact=True,
+                prompt="Select a dir to cd in:",
+            )
 
         # -----------------------------------------------
         # Create template
         # -----------------------------------------------
-        session_name
         data = {}
-        data["hostnames"] = hostnames
+        data["hosts"] = hosts
         data["session_name"] = session_name
         data["created_by"] = self.run_username
-        data["timestamp"] = self.script_time
+        data["created_ts"] = self.script_time
 
         if args.shell:
             data["shell_cmd"] = args.shell
-        if args.dir:
-            data["directory"] = args.dir
+        if directory:
+            data["directory"] = directory
         data["synchronize"] = args.sync
         data["tiled"] = args.tiled
 

@@ -49,7 +49,7 @@ class Ultimux:
         #########################################
         # Set session name
         #########################################
-        datestamp = "{:%Y-%m-%d_%H%M%S}".format(datetime.datetime.now())
+        datestamp = "{:%Y%m%d_%H%M%S%f}".format(datetime.datetime.now())
 
         if session_name == "":
             self.session_name = self.app_name
@@ -431,8 +431,8 @@ class Ultimux:
             # ---------------------------------------
             # run ssh command remotely or login
             seperator = ";"
-            if "login" in ssh_options and not ssh_options.get("login"):
-                seperator = ""
+            # if "login" in ssh_options and not ssh_options.get("login"):
+            #     seperator = ""
 
             # add ssh prefix to command
             command = "{}{} {}".format(ssh_command, seperator, command)

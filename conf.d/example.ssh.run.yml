@@ -3,12 +3,10 @@ full_layout:
   ssh:
     user: 'root'
     server: 'juggernaut'
-    login: false
   panes:
   - shell: 'echo 1' # pane at the top
     ssh:
       server: 'iceman'
-      login: true
   - shell: ['echo 2', 'echo 3'] # two panes next to eachother
     ssh:
       server: 'cyclops'
@@ -19,7 +17,6 @@ full_layout:
     ssh:
       server: 'northstar'
       user: brdooms
-      login: true
     panes:
     - shell: 'echo 5'
     - shell: 'echo 6'
@@ -27,8 +24,6 @@ full_layout:
     panes:
     - shell: 'sudo tail -f /var/log/auth.log'
 minimal_layout:
-  ssh:
-    login: true
   panes:
   - ssh:
       server: 'iceman'
@@ -39,8 +34,6 @@ minimal_layout:
   interactive: true
 commands_escape:
   layout: even-horizontal
-  ssh:
-    login: true
   panes:
   - shell: ['htop', 'sudo tail -f /var/log/auth.log', "watch \"netstat -anp | rg ''ESTABL.*''\"" ]
     ssh:
@@ -48,6 +41,5 @@ commands_escape:
 remote_tmux:
   ssh:
     server: juggernaut
-    login: true
   panes:
   - shell: 'tmux new-session -s testje -d; tmux attach -t testje'

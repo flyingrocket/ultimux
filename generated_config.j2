@@ -1,6 +1,6 @@
 ---
 # Ultimux generated config file
-# Created On {{ timestamp }}
+# Created On {{ created_ts }}
 # Created By {{ created_by }}
 
 {{ session_name }}:
@@ -13,13 +13,13 @@
   synchronize: false
 {%- endif %}
   panes:
-{%- for hostname in hostnames %}
+{%- for host in hosts %}
   - ssh:
-      server: {{ hostname }}
+      server: {{ host }}
 {%- if shell_cmd %}
-      shell: '{{ shell_cmd -}}'
+    shell: '{{ shell_cmd -}}'
 {% endif %}
 {%- if directory %}
-      dir: '{{ directory -}}'
+    dir: '{{ directory -}}'
 {% endif %}
 {% endfor -%}
