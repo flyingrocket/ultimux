@@ -107,6 +107,9 @@ class App:
                     prompt="Select a config file:",
                 )
 
+        if not file_path:
+            sys.exit(f"No config file selected...")
+
         if os.path.exists(file_path):
             print(f"Use config file '{file_path}'...")
         else:
