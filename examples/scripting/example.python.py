@@ -3,7 +3,7 @@
 import sys
 
 # ultimux
-from ultimux import Ultimux
+from _ultimux import Ultimux
 
 session_config = {}
 session_config["windows"] = []
@@ -12,16 +12,16 @@ for window_name in ["win1", "win2"]:
     session_config["windows"].append(
         {
             "name": window_name,
-            "sessions": [
-                {"cmds": "ls"},  # pane at the top
-                {"cmds": ["w", "whoami"]},  # two panes next to eachother
-                {"cmds": "ssh northstar; w"},  # pane at the bottom
+            "panes": [
+                {"shell": "ls"},  # pane at the top
+                {"shell": ["w", "whoami"]},  # two panes next to eachother
+                {"shell": "ssh northstar; w"},  # pane at the bottom
             ],
         }
     )
 
 session_name = "my_dict_test"
-utmx = Ultimux(session_config, session_name)
+utmx = Ultimux(session_config)
 utmx.set_focus("0.1")
 utmx.set_interactive(True)
 utmx.create()

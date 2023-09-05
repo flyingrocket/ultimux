@@ -52,7 +52,7 @@ class Ultimux:
         datestamp = "{:%Y%m%d_%H%M%S%f}".format(datetime.datetime.now())
 
         if session_name == "":
-            self.session_name = self.app_name
+            self.session_name = self.app_name + datestamp
         else:
             self.session_name = session_name
 
