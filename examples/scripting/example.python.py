@@ -3,7 +3,7 @@
 import sys
 
 # ultimux
-from lib.ultimux import Ultimux
+from ultimux import Ultimux
 
 session_config = {}
 session_config["windows"] = []
