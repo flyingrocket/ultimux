@@ -255,6 +255,8 @@ class GenApp(App):
 
                                 sel_dirs.extend(yaml_config["dirs"][pattern])
 
+            sel_dirs = list(dict.fromkeys(sel_dirs))
+
             directory = iterfzf(
                 sel_dirs,
                 multi=False,
