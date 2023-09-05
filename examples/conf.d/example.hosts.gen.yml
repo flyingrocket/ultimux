@@ -1,0 +1,24 @@
+---
+groups:
+  proxy_servers:
+    - host: host1.example.com
+      description: haproxy server
+    - host: host2.example.com
+      description: varnish server
+  web1_servers:
+    - host: host3.example.com
+      description: nginx server
+    - host: host4.example.com
+      description: apache server
+  web2_servers:
+    - host: host5.example.com
+      description: tomcat server
+
+# keys from dirs are globs that match groups
+dirs:
+  proxy_servers:
+  - /etc
+  - /opt
+  web*_servers:
+  - /var
+  - /www
