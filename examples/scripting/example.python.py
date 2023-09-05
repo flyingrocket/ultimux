@@ -12,7 +12,7 @@ for window_name in ["win1", "win2"]:
     session_config["windows"].append(
         {
             "name": window_name,
-            "sections": [
+            "sessions": [
                 {"cmds": "ls"},  # pane at the top
                 {"cmds": ["w", "whoami"]},  # two panes next to eachother
                 {"cmds": "ssh northstar; w"},  # pane at the bottom

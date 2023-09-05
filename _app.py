@@ -132,26 +132,26 @@ class App:
 
         return yaml_config
 
-    def select_sections(self, yaml_config, section_name="session", multi_select=True):
+    def select_sessions(self, yaml_config, session_name="session", multi_select=True):
 
-        sections_available = yaml_config.keys()
+        sessions_available = yaml_config.keys()
 
-        sections = iterfzf(
-            sections_available,
+        sessions = iterfzf(
+            sessions_available,
             multi=multi_select,
             exact=True,
-            prompt="Select a section:",
+            prompt="Select a session:",
         )
 
-        if not isinstance(sections, list):
-            sections = [sections]
+        if not isinstance(sessions, list):
+            sessions = [sessions]
 
-        for section_name in sections:
-            if not section_name in yaml_config.keys():
-                print(f"{section_name} not found!")
+        for session_name in sessions:
+            if not session_name in yaml_config.keys():
+                print(f"{session_name} not found!")
                 sys.exit()
 
-        return sections
+        return sessions
 
     def is_valid_host(self, host):
         if len(host) > 255:
@@ -172,7 +172,7 @@ class GenApp(App):
         if args.flatten:
             server_groups = yaml_config["groups"]
         else:
-            server_groups = self.select_sections(yaml_config["groups"], "group")
+            server_groups = self.select_sessions(yaml_config["groups"], "group")
 
         # -----------------------------------------------
         # Select hosts
@@ -311,7 +311,7 @@ class RunApp(App):
         yaml_config = self.read_yaml_config(self.get_cli_config_file())
 
         if not session_name:
-            session_name = self.select_sections(yaml_config, "session", False)[0]
+            session_name = self.select_sessions(yaml_config, "session", False)[0]
 
         if not session_name:
             sys.exit("Illegal session name!")

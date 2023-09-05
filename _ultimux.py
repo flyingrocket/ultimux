@@ -125,12 +125,6 @@ class Ultimux:
 
         session_config = self.session_config
 
-        # backward compatibility - replace keys
-        session_config = ast.literal_eval(repr(session_config).replace("cmds", "shell"))
-        session_config = ast.literal_eval(
-            repr(session_config).replace("sections", "panes")
-        )
-
         # ---------------------------------------
         # Global options
         # ---------------------------------------
