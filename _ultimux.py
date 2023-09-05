@@ -5,9 +5,9 @@ import ast, datetime, os, re, subprocess, sys
 
 class Ultimux:
 
-    #########################################
+    # -----------------------------------------------
     # Application properties
-    #########################################
+    # -----------------------------------------------
     tmux_commands = []
 
     session_config = {}
@@ -18,9 +18,9 @@ class Ultimux:
 
     version = "2.0"
 
-    #########################################
+    # -----------------------------------------------
     # Dynamic properties
-    #########################################
+    # -----------------------------------------------
 
     col = False
 
@@ -36,9 +36,9 @@ class Ultimux:
 
         self.session_config = session_config
 
-        #########################################
+        # -----------------------------------------------
         # Check if tmux is installed
-        #########################################
+        # -----------------------------------------------
         try:
             subprocess.call(
                 ["tmux", "-V"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
@@ -46,9 +46,9 @@ class Ultimux:
         except OSError:
             print("Tmux is not installed...")
 
-        #########################################
+        # -----------------------------------------------
         # Set session name
-        #########################################
+        # -----------------------------------------------
         datestamp = "{:%Y%m%d_%H%M%S%f}".format(datetime.datetime.now())
 
         if session_name == "":
@@ -63,9 +63,9 @@ class Ultimux:
         if re.search("(\.|\:|\ )+", self.session_name):
             self.fail("Session name may not contain .: or spaces!")
 
-        #########################################
+        # -----------------------------------------------
         # Set defaults
-        #########################################
+        # -----------------------------------------------
         self.tmux_commands = []
 
         self.focus = "0.0"
