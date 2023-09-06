@@ -22,11 +22,13 @@ class App:
 
         self.appname = "utmx"
         self.args = args
+        self.cli_config_file = None
         self.homedir = os.path.abspath(os.getenv("HOME"))
         self.run_username = getpass.getuser()
         self.script_dir = os.path.dirname(os.path.realpath(__file__))
         self.script_time = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
         self.tmux_name = f"{self.appname}_{self.script_time}"
+        self.yaml_configs = {}
 
         # get configuration for utmx app
         self.app_config = self.get_app_config_yaml()
@@ -49,6 +51,10 @@ class App:
 
         args = self.args
         app_config = self.app_config
+
+        # return cached file
+        if self.cli_config_file:
+            return self.cli_config_file
 
         if args.config_file:
             # do not use abspath here
@@ -115,9 +121,16 @@ class App:
         else:
             sys.exit(f"Config file '{file_path}' not found!")
 
+        self.cli_config_file = file_path
+
         return file_path
 
     def read_yaml_config(self, file_path):
+
+        # return already parsed file
+        if file_path in self.yaml_configs:
+            return self.yaml_configs[file_path]
+
         # read the yaml file
         with open(file_path) as file:
 
@@ -129,6 +142,8 @@ class App:
                     sys.exit("Exception in parsing yaml file " + file_path + "!")
             else:
                 sys.exit("{} file not supported!".format(file_path))
+
+        self.yaml_configs[file_path] = yaml_config
 
         return yaml_config
 
@@ -163,32 +178,79 @@ class App:
 
 
 class GenApp(App):
+    def get_group_config(self):
+
+        yaml_config = self.read_yaml_config(self.get_cli_config_file())
+
+        groups = {}
+
+        for config in yaml_config["hosts"]:
+
+            if "groups" in config:
+
+                for group in config["groups"]:
+
+                    if self.args.group_match:
+
+                        if not globre.match(self.args.group_match, group):
+                            continue
+
+                    if self.args.host_match:
+                        if not globre.match(self.args.host_match, config["host"]):
+                            continue
+
+                    if group not in groups:
+                        groups[group] = {}
+
+                    groups[group][config["host"]] = config
+
+        return groups
+
     def get_session_config(self, session_name):
 
         args = self.args
 
         yaml_config = self.read_yaml_config(self.get_cli_config_file())
 
+        group_config = self.get_group_config()
+
+        if not len(group_config):
+            sys.exit("No hosts found!")
+
+        select_groups = list(group_config.keys())
+
         if args.flatten:
-            server_groups = yaml_config["groups"]
+            host_groups = select_groups
+        elif len(select_groups) == 1:
+            host_groups = select_groups
         else:
-            server_groups = self.select_sessions(yaml_config["groups"], "group")
+            host_groups = iterfzf(
+                select_groups,
+                multi=False,
+                exact=True,
+                prompt="Select a group:",
+            )
+
+        if not isinstance(host_groups, list):
+            host_groups = [host_groups]
 
         # -----------------------------------------------
         # Select hosts
         # -----------------------------------------------
         choices_list = []
-        for server_group in server_groups:
-            for item in yaml_config["groups"][server_group]:
+
+        for host_group in host_groups:
+
+            for config in group_config[host_group]:
 
                 description = ""
 
-                if isinstance(item, dict):
-                    host = item["host"]
-                    if "description" in item:
-                        description = item["description"]
+                if isinstance(config, dict):
+                    host = config["host"]
+                    if "description" in config:
+                        description = config["description"]
                 else:
-                    host = item.rstrip(" ")
+                    host = config.rstrip(" ")
                 if not self.is_valid_host(host) or host[-1] == ".":
                     sys.exit(f"Illegal host: '{host}'")
 
@@ -226,43 +288,47 @@ class GenApp(App):
         directory = False
 
         if args.dir:
-            directory = args.dir
 
-        if args.select_dir:
+            if args.dir == "select":
 
-            sel_dirs = []
+                sel_dirs = []
 
-            for host in hosts:
+                for host in hosts:
 
-                for group in yaml_config["groups"]:
+                    for group, config in group_config.items():
 
-                    for item in yaml_config["groups"][group]:
+                        host_config = config[host]
 
-                        if isinstance(item, dict):
+                        if isinstance(host_config, dict):
 
-                            if item["host"] != host:
+                            if host_config["host"] != host:
                                 continue
 
-                        elif item != host:
-                            continue
-
-                        # if we got this for, the host is a match!
+                        else:
+                            sys.exit("Illegal host config!")
 
                         # check for dir patterns
-                        for pattern in yaml_config["dirs"]:
+                        for dconfig in yaml_config["dirs"]:
 
-                            if globre.match(pattern, group):
+                            for pattern in dconfig["group_match"]:
 
-                                sel_dirs.extend(yaml_config["dirs"][pattern])
+                                if globre.match(pattern, group):
+                                    sel_dirs.extend(dconfig["paths"])
 
-            sel_dirs = list(dict.fromkeys(sel_dirs))
+                sel_dirs = list(dict.fromkeys(sel_dirs))
 
-            directory = iterfzf(
-                sel_dirs,
-                multi=False,
-                exact=True,
-                prompt="Select a dir to cd in:",
-            )
+                directory = iterfzf(
+                    sel_dirs,
+                    multi=False,
+                    exact=True,
+                    prompt="Select a dir to cd in:",
+                )
+
+            else:
+                directory = args.dir
+
+        if not re.match("^\/([^/\n]+\/?)*$", directory):
+            sys.exit(f"Illegal dir '{directory}'!")
 
         # -----------------------------------------------
         # Create template

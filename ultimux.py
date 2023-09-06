@@ -75,19 +75,33 @@ gparser = subparsers.add_parser(
 )
 
 # directory stuff
-group = gparser.add_mutually_exclusive_group()
-group.add_argument("--dir", help="remote dir to cd in", required=False)
-group.add_argument(
-    "--select-dir",
-    help="select remote dir to cd in",
+gparser.add_argument(
+    "--dir",
+    "-d",
+    nargs="?",
+    help="remote dir to cd in, leave empty to select",
     required=False,
-    action="store_true",
+    const="select",
+)
+
+gparser.add_argument(
+    "--group-match",
+    "-g",
+    help="(glob) match group",
+    required=False,
+)
+
+gparser.add_argument(
+    "--host-match",
+    "-m",
+    help="(glob) match host",
+    required=False,
 )
 
 # show all servers as flat list
 gparser.add_argument(
     "--flatten",
-    "-f",
+    "-n",
     help="do not use server groups, show flat list.",
     required=False,
     action="store_true",
