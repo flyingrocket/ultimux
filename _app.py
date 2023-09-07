@@ -241,16 +241,13 @@ class GenApp(App):
 
         for host_group in host_groups:
 
-            for config in group_config[host_group]:
+            for host in group_config[host_group]:
 
-                description = ""
+                config = group_config[host_group][host]
 
-                if isinstance(config, dict):
-                    host = config["host"]
-                    if "description" in config:
-                        description = config["description"]
-                else:
-                    host = config.rstrip(" ")
+                if "description" in config:
+                    description = config["description"]
+
                 if not self.is_valid_host(host) or host[-1] == ".":
                     sys.exit(f"Illegal host: '{host}'")
 
