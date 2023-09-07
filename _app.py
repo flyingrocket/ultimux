@@ -327,8 +327,9 @@ class GenApp(App):
             else:
                 directory = args.dir
 
-        if not re.match("^\/([^/\n]+\/?)*$", directory):
-            sys.exit(f"Illegal dir '{directory}'!")
+        if directory:
+            if not re.match("^\/([^/\n]+\/?)*$", directory):
+                sys.exit(f"Illegal dir '{directory}'!")
 
         # -----------------------------------------------
         # Create template
