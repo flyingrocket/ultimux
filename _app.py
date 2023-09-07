@@ -217,7 +217,7 @@ class GenApp(App):
         if not len(group_config):
             sys.exit("No hosts found!")
 
-        select_groups = list(group_config.keys())
+        select_groups = sorted(list(group_config.keys()))
 
         if args.flatten:
             host_groups = select_groups
