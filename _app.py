@@ -254,7 +254,7 @@ class GenApp(App):
                 choices_list.append(f"{host}; {description}")
 
         # remove empty
-        choices_list = list(filter(None, choices_list))
+        choices_list = list(set(filter(None, choices_list)))
 
         # sort
         choices_list = natsorted(choices_list)
