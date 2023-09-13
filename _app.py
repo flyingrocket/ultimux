@@ -206,6 +206,19 @@ class GenApp(App):
 
         return groups
 
+    def get_host_config(self, host):
+
+        host_config = {}
+
+        host_configs = self.read_yaml_config(self.get_cli_config_file())["hosts"]
+
+        for host_config in host_configs:
+
+            if host_config["host"] == host:
+                return host_config
+
+        sys.exit("Illegal host. Not found.")
+
     def get_session_config(self, session_name):
 
         args = self.args
@@ -243,10 +256,10 @@ class GenApp(App):
 
             for host in group_config[host_group]:
 
-                config = group_config[host_group][host]
+                host_config = group_config[host_group][host]
 
-                if "description" in config:
-                    description = config["description"]
+                if "description" in host_config:
+                    description = host_config["description"]
 
                 if not self.is_valid_host(host) or host[-1] == ".":
                     sys.exit(f"Illegal host: '{host}'")
@@ -275,9 +288,9 @@ class GenApp(App):
         if len(hosts0) > 9:
             sys.exit("Max number is 9!")
 
-        hosts = []
+        hosts_selected = []
         for entry in hosts0:
-            hosts.append(entry.split(";")[0].strip())
+            hosts_selected.append(entry.split(";")[0].strip())
 
         # -----------------------------------------------
         # Select dir
@@ -290,27 +303,27 @@ class GenApp(App):
 
                 sel_dirs = []
 
-                for host in hosts:
+                for host_selected in hosts_selected:
 
-                    for group, config in group_config.items():
+                    host_config = self.get_host_config(host_selected)
 
-                        host_config = config[host]
+                    if isinstance(host_config, dict):
 
-                        if isinstance(host_config, dict):
+                        if host_config["host"] != host_selected:
+                            continue
 
-                            if host_config["host"] != host:
-                                continue
+                    else:
+                        sys.exit("Illegal host config!")
 
-                        else:
-                            sys.exit("Illegal host config!")
+                    # check for dir patterns
+                    for dir_config in yaml_config["dirs"]:
 
-                        # check for dir patterns
-                        for dconfig in yaml_config["dirs"]:
+                        for pattern in dir_config["group_match"]:
 
-                            for pattern in dconfig["group_match"]:
+                            for group in host_config["groups"]:
 
                                 if globre.match(pattern, group):
-                                    sel_dirs.extend(dconfig["paths"])
+                                    sel_dirs.extend(dir_config["paths"])
 
                 sel_dirs = list(dict.fromkeys(sel_dirs))
 
@@ -332,7 +345,7 @@ class GenApp(App):
         # Create template
         # -----------------------------------------------
         data = {}
-        data["hosts"] = hosts
+        data["hosts"] = hosts_selected
         data["session_name"] = session_name
         data["created_by"] = self.run_username
         data["created_ts"] = self.script_time
