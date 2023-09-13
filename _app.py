@@ -158,13 +158,15 @@ class App:
             prompt="Select a session:",
         )
 
+        if not sessions:
+            sys.exit("Illegal selection!")
+
         if not isinstance(sessions, list):
             sessions = [sessions]
 
         for session_name in sessions:
             if not session_name in yaml_config.keys():
-                print(f"{session_name} not found!")
-                sys.exit()
+                sys.exit(f"{session_name} not found!")
 
         return sessions
 
@@ -244,6 +246,9 @@ class GenApp(App):
                 prompt="Select a group:",
             )
 
+        if not host_groups:
+            sys.exit("Illegal selection!")
+
         if not isinstance(host_groups, list):
             host_groups = [host_groups]
 
@@ -278,6 +283,9 @@ class GenApp(App):
             exact=True,
             prompt="Select (multiple with tab/shift+tab) server(s):",
         )
+
+        if not hosts0:
+            sys.exit("Illegal selection!")
 
         if not isinstance(hosts0, list):
             hosts0 = [hosts0]
@@ -333,6 +341,9 @@ class GenApp(App):
                     exact=True,
                     prompt="Select a dir to cd in:",
                 )
+
+                if not directory:
+                    sys.exit("Illegal selection!")
 
             else:
                 directory = args.dir
