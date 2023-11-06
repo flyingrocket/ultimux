@@ -262,6 +262,7 @@ class GenApp(App):
             for host in group_config[host_group]:
 
                 host_config = group_config[host_group][host]
+                description = ''
 
                 if "description" in host_config:
                     description = host_config["description"]
