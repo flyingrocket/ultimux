@@ -47,6 +47,11 @@ parser.add_argument(
     action="store_true",
 )
 
+# tiled
+parser.add_argument(
+    "--name", help="tmux session name", required=False
+)
+
 # -----------------------------------------------
 # Subparser
 # -----------------------------------------------
@@ -135,19 +140,24 @@ args = parser.parse_args()
 # -----------------------------------------------
 if args.subcommand == "run":
     app = RunApp(args)
-    session_name = args.session
+    config_index = args.session
 elif args.subcommand == "gen":
     app = GenApp(args)
-    session_name = f"utmx_gen_{script_time}"
+    config_index = f"utmx_gen_{script_time}"
 else:
     sys.exit("Illegal subcommand!")
 
 # -----------------------------------------------
 # Instantiate ultimux class
 # -----------------------------------------------
-session_config = app.get_session_config(session_name)
+session_config = app.get_session_config(config_index)
 
-utmx = Ultimux(session_config, f"utmx_{args.subcommand}", True)
+if args.name == '':
+    tmux_session_name = f"utmx_{args.subcommand}"
+else:
+    tmux_session_name = args.name
+
+utmx = Ultimux(session_config, tmux_session_name, True)
 
 for flag in ["debug", "interactive", "sync", "tiled"]:
     if hasattr(args, flag) and getattr(args, flag):
