@@ -152,7 +152,7 @@ else:
 # -----------------------------------------------
 session_config = app.get_session_config(config_index)
 
-if args.name == '':
+if not args.name:
     tmux_session_name = f"utmx_{args.subcommand}"
 else:
     tmux_session_name = args.name
