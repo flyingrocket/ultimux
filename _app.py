@@ -62,11 +62,11 @@ class App:
             config_file = args.config_file
 
             # relative path to ~
-            if re.match("^~\/", config_file):
+            if re.match(r"^~\/", config_file):
                 homedir = os.path.abspath(os.getenv("HOME"))
                 file_path = os.path.abspath(config_file.replace("~", homedir))
             # relative or absolute path
-            elif re.match("^\.\/", config_file) or re.match("^\/", config_file):
+            elif re.match(r"^\.\/", config_file) or re.match(r"^\/", config_file):
                 file_path = os.path.abspath(config_file)
             # just a filename without path
             else:
@@ -134,7 +134,7 @@ class App:
         # read the yaml file
         with open(file_path) as file:
 
-            if re.search(".+\.ya?ml$", file_path):
+            if re.search(r".+\.ya?ml$", file_path):
                 try:
                     yaml_config = yaml.load(file, Loader=yaml.SafeLoader)
                 except yaml.YAMLError as e:
@@ -175,14 +175,30 @@ class App:
             return False
         if host[-1] == ".":
             host = host[:-1]  # strip exactly one dot from the right, if present
-        allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+        allowed = re.compile(r"(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
         return all(allowed.match(x) for x in host.split("."))
 
 
 class GenApp(App):
+
     def get_group_config(self):
 
         yaml_config = self.read_yaml_config(self.get_cli_config_file())
+
+        hosts = []
+        for config in yaml_config['hosts']:
+
+            config2 = config.copy()
+            if 'groups' not in config:
+                config2['groups'] = ['<none>', '<all>']
+            else:
+                config2['groups'] = config['groups']
+                if '<all>' not in config['groups']:
+                    config2['groups'].append('<all>')
+
+            hosts.append(config2)
+
+        yaml_config['hosts'] = hosts
 
         groups = {}
 
@@ -350,7 +366,7 @@ class GenApp(App):
                 directory = args.dir
 
         if directory:
-            if not re.match("^\/([^/\n]+\/?)*$", directory):
+            if not re.match(r"^\/([^/\n]+\/?)*$", directory):
                 sys.exit(f"Illegal dir '{directory}'!")
 
         # -----------------------------------------------

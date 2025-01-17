@@ -60,7 +60,7 @@ class Ultimux:
             self.session_name += "_" + datestamp
 
         # validate session name
-        if re.search("(\.|\:|\ )+", self.session_name):
+        if re.search(r"(\.|\:|\ )+", self.session_name):
             self.fail("Session name may not contain .: or spaces!")
 
         # -----------------------------------------------
@@ -95,7 +95,7 @@ class Ultimux:
 
     def set_focus(self, focus):
 
-        if not re.match("^[0-9]+\.[0-9]+$", focus):
+        if not re.match(r"^[0-9]+\.[0-9]+$", focus):
             self.fail("Focus must be {number}.{number}!")
 
         self.focus = focus
